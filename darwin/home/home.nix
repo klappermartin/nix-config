@@ -32,6 +32,7 @@
       gh-eco
       gnupg
       google-chrome
+      google-cloud-sdk
       kitty
       meslo-lgs-nf
       mqttui
@@ -337,12 +338,16 @@
         signByDefault = true;
       };
       settings = {
-        aliases = {
+        alias = {
           st = "status -sb";
           fo = "fetch origin";
           d = "!git --no-pager diff";
           dt = "difftool";
           stat = "!git --no-pager diff --stat";
+
+          # list stashes that were made on current branch
+          # caveat: if current branch is substring of another branch, stashes from other branch are also matched
+          gstlcb = "!git stash list --grep='$(git rev-parse --abbrev-ref HEAD)'";
 
           # display list of tags with information about ref, author, subject
           taglist = "!git for-each-ref --format='%(refname:short) %(objectname:short) %(authordate:short) %(contents:subject)' refs/tags";

@@ -2,7 +2,7 @@
   description = "5head config";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable-2505.url = "github:NixOS/nixpkgs/release-25.05";
 
     darwin = {

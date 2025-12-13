@@ -20,12 +20,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    mac-app-util = {
-      url = "github:hraban/mac-app-util";
-      # FIXME: move to unstable again, once lisp test is fixed for darwin (merged already)
-      inputs.nixpkgs.follows = "nixpkgs-stable-2505";
-    };
-
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -57,7 +51,6 @@
       nixpkgs-stable-2505,
       home-manager,
       darwin,
-      mac-app-util,
       nix-homebrew,
       ...
     }:
@@ -75,7 +68,6 @@
           };
           modules = [
             ./darwin/system/configuration.nix
-            mac-app-util.darwinModules.default
             nix-homebrew.darwinModules.nix-homebrew
             {
               nix-homebrew = {
@@ -101,7 +93,6 @@
                 };
 
                 sharedModules = [
-                  mac-app-util.homeManagerModules.default
                   inputs.sops-nix.homeManagerModules.sops
                 ];
 

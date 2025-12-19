@@ -654,37 +654,37 @@
                 name = "rust-analyzer";
                 publisher = "rust-lang";
                 version = "latest";
-                sha256 = "sha256-HwELyT9Rq96w90IvAXB4u0EUvd0D7HArWuKtYeaOOKs=";
+                sha256 = "sha256-at05EA/DuX4QuhUX1/mcOyksrYlY5sHmAeAHjh5i0AY=";
               }
               {
                 name = "oxc-vscode";
                 publisher = "oxc";
                 version = "latest";
-                sha256 = "sha256-Vabz0/NDhh09nxFSRqGk+/eRVCNXw6sOrSu9qIm9j9A=";
+                sha256 = "sha256-IO9qp7lJ5N44neBIxfId4rtE+R0fb7AJxv0QJFUSuGU=";
               }
               {
                 name = "python";
                 publisher = "ms-python";
                 version = "latest";
-                sha256 = "sha256-f573A/7s8jVfH1f3ZYZSTftrfBs6iyMWewhorX4Z0Nc=";
+                sha256 = "sha256-8ZOpQiEPrBTHiXjXbSfuWfR6L0cS0sWOUo9R8zgckY4=";
               }
               {
                 name = "playwright";
                 publisher = "ms-playwright";
                 version = "latest";
-                sha256 = "sha256-t5PJtBDkjh80IhOpfjsX8kZCSfhGoQ1dePEYMYgw66c=";
+                sha256 = "sha256-qIQS9rjzTJF0T6RWMJvaxOGcQmoXpIhzVHDMFxGMb/A=";
               }
               {
                 name = "code-spell-checker-british-english";
                 publisher = "streetsidesoftware";
                 version = "latest";
-                sha256 = "sha256-j/XdeswdXWnkY/LhDwkdkFmn2sICSRnAHcUCoGPlPGc=";
+                sha256 = "sha256-A7pp3aLvK5Vaw7ecbqxlHxmKgG2ATuIGUVGxf06EbWY=";
               }
               {
                 name = "code-spell-checker-german";
                 publisher = "streetsidesoftware";
                 version = "latest";
-                sha256 = "sha256-40Oc6ycNog9cxG4G5gCps2ADrM/wLuKWFrD4lnd91Z4=";
+                sha256 = "sha256-zc0cv4AOswvYcC4xJOq2JEPMQ5qTj9Dad5HhxtNETEs=";
               }
               {
                 name = "vscode-todo-highlight";
@@ -720,7 +720,7 @@
                 name = "vscode-typescript-next";
                 publisher = "ms-vscode";
                 version = "latest";
-                sha256 = "sha256-6xsmmMfd9XppkvuEp5vWoTLvlRTH74t37+8ZPVmSsx4=";
+                sha256 = "sha256-remnlMxY6EEgI+JheyiYQlvxjNfcH8qptDOL3aGG+ew=";
               }
               {
                 name = "react-proptypes-intellisense";
@@ -732,13 +732,13 @@
                 name = "shellcheck";
                 publisher = "timonwong";
                 version = "latest";
-                sha256 = "sha256-JSS0GY76+C5xmkQ0PNjt2Nu/uTUkfiUqmPL51r64tl0=";
+                sha256 = "sha256-/wpeKat/ndv9INDTvluxp+07QxaDLuZyJRv5o+2ngs4=";
               }
               {
                 name = "vscode-expo-tools";
                 publisher = "expo";
                 version = "latest";
-                sha256 = "sha256-qNgidCb8D13coJkykgwViSuMNxXaqitkN3VRKLS3LWk=";
+                sha256 = "sha256-Rs4mMhJ514ruId6zrJ2CFzGCXIemZpVJoA40gy41uYg=";
               }
             ];
 

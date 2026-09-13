@@ -1,0 +1,273 @@
+// OMO configuration — oh-my-openagent (track: latest stable)
+// Subs: Claude Max 5x (anthropic), OpenAI Pro 20x (openai), OpenCode Go (opencode-go)
+//
+// STRATEGY: primaries NOT pinned -> inherit the plugin's compiled
+// AGENT_MODEL_REQUIREMENTS / CATEGORY_MODEL_REQUIREMENTS chains, so model
+// generations advance automatically with each plugin release. No edit needed.
+//
+// KNOWN COST on 4.19.4: its chains predate gpt-6-astra and claude-fable-5-1
+// (0 occurrences in the shipped binary). Verified present in 5.0.0-beta.51
+// (14 and 6 occurrences) -> resolves itself on the 5.x upgrade, no edit here.
+//
+// fallback_models STAY pinned: the runtime-fallback hook reads only user
+// fallback_models and never the compiled chain, so removing them would
+// silently disable mid-session quota failover.
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
+  "codegraph": {},
+  "[opencode]": {
+    "codegraph": {},
+    "model_fallback": true,
+    "runtime_fallback": true,
+    "agents": {
+      "sisyphus": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3"
+          },
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "metis": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "low"
+          }
+        ]
+      },
+      "prometheus": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "max"
+          }
+        ]
+      },
+      "atlas": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3"
+          },
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      },
+      "sisyphus-junior": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3"
+          },
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      },
+      "oracle": {
+        "fallback_models": [
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "max"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "momus": {
+        "fallback_models": [
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "xhigh"
+          },
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "max"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "explore": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/qwen3.7-plus"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "anthropic/claude-haiku-4-5"
+          },
+          {
+            "model": "openai/gpt-5.4-nano"
+          }
+        ]
+      },
+      "librarian": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/qwen3.7-plus"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "anthropic/claude-haiku-4-5"
+          },
+          {
+            "model": "openai/gpt-5.4-nano"
+          }
+        ]
+      },
+      "multimodal-looker": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3"
+          },
+          {
+            "model": "openai/gpt-5-nano"
+          }
+        ]
+      }
+    },
+    "categories": {
+      "visual-engineering": {
+        "fallback_models": [
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "max"
+          },
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "max"
+          }
+        ]
+      },
+      "ultrabrain": {
+        "fallback_models": [
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "max"
+          },
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "max"
+          }
+        ]
+      },
+      "deep": {
+        "fallback_models": [
+          {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          },
+          {
+            "model": "opencode-go/kimi-k3"
+          }
+        ]
+      },
+      "artistry": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "max"
+          },
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "xhigh"
+          }
+        ]
+      },
+      "quick": {
+        "fallback_models": [
+          {
+            "model": "anthropic/claude-haiku-4-5"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "openai/gpt-5-nano"
+          }
+        ]
+      },
+      "unspecified-low": {
+        "fallback_models": [
+          {
+            "model": "anthropic/claude-sonnet-5",
+            "variant": "low"
+          },
+          {
+            "model": "opencode-go/deepseek-v4-pro"
+          },
+          {
+            "model": "opencode-go/kimi-k3"
+          }
+        ]
+      },
+      "unspecified-high": {
+        "fallback_models": [
+          {
+            "model": "anthropic/claude-opus-5",
+            "variant": "xhigh"
+          },
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "max"
+          }
+        ]
+      },
+      "writing": {
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "max"
+          },
+          {
+            "model": "anthropic/claude-sonnet-5"
+          }
+        ]
+      }
+    }
+  },
+  "[codex]": {
+    "codegraph": {}
+  },
+  "_migrations": [
+    "2026-07-codex-config-jsonc",
+    "2026-07-opencode-config-unification",
+    "2026-08-reasoning-unification"
+  ]
+}

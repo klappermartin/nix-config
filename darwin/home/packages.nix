@@ -45,7 +45,6 @@
     nmap
     nodejs_22
     obsidian
-    opencode
     osu-lazer-bin
     procs
     pi-coding-agent

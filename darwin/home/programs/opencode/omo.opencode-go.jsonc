@@ -1,0 +1,208 @@
+// OpenCode Go-primary profile — primaries intentionally PINNED.
+// This profile exists to override the default chains; stubbing it would
+// make it identical to the default and defeat its purpose.
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
+  "codegraph": {},
+  "[opencode]": {
+    "codegraph": {},
+    "model_fallback": true,
+    "runtime_fallback": true,
+    "agents": {
+      "sisyphus": {
+        "model": "opencode-go/kimi-k3",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "metis": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "low",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "prometheus": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "max",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "atlas": {
+        "model": "opencode-go/kimi-k3",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "sisyphus-junior": {
+        "model": "opencode-go/kimi-k3",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "hephaestus": {
+        "model": "opencode-go/kimi-k3"
+      },
+      "oracle": {
+        "model": "opencode-go/glm-5.2",
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "high"
+          }
+        ]
+      },
+      "momus": {
+        "model": "opencode-go/glm-5.2",
+        "fallback_models": [
+          {
+            "model": "opencode-go/kimi-k3",
+            "variant": "xhigh"
+          }
+        ]
+      },
+      "explore": {
+        "model": "opencode-go/qwen3.7-plus",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      },
+      "librarian": {
+        "model": "opencode-go/qwen3.7-plus",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      },
+      "multimodal-looker": {
+        "model": "opencode-go/kimi-k3"
+      }
+    },
+    "categories": {
+      "visual-engineering": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "max",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "ultrabrain": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "xhigh",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "deep": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "xhigh",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "artistry": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "max",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "quick": {
+        "model": "opencode-go/qwen3.7-plus",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      },
+      "unspecified-low": {
+        "model": "opencode-go/kimi-k3",
+        "fallback_models": [
+          {
+            "model": "opencode-go/deepseek-v4-pro"
+          },
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          },
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "unspecified-high": {
+        "model": "opencode-go/kimi-k3",
+        "variant": "max",
+        "fallback_models": [
+          {
+            "model": "opencode-go/glm-5.2"
+          }
+        ]
+      },
+      "writing": {
+        "model": "opencode-go/kimi-k3",
+        "fallback_models": [
+          {
+            "model": "opencode-go/minimax-m3"
+          },
+          {
+            "model": "opencode-go/minimax-m2.7"
+          }
+        ]
+      }
+    }
+  },
+  "[codex]": {
+    "codegraph": {}
+  },
+  "_migrations": [
+    "2026-07-codex-config-jsonc",
+    "2026-07-opencode-config-unification",
+    "2026-08-reasoning-unification"
+  ]
+}

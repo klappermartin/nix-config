@@ -9,6 +9,7 @@
     ./ghostty.nix
     ./kitty.nix
     ./mpv.nix
+    ./opencode
     ./oss-references.nix
     ./tmux.nix
     ./vscodium.nix

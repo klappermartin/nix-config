@@ -82,7 +82,7 @@
               };
             }
             home-manager.darwinModules.home-manager
-            {
+            ({ pkgs, ... }: {
               nixpkgs.overlays = [
                 inputs.nur.overlays.default
               ];
@@ -103,9 +103,21 @@
                     ./darwin/home/sketchybar/sketchybar.nix
                   ];
                 };
-                backupFileExtension = "backup";
+                backupCommand = "${
+                  pkgs.writeShellApplication {
+                    name = "home-manager-backup";
+                    runtimeInputs = [ pkgs.coreutils ];
+                    text = ''
+                      file=$1
+                      if [[ -e "$file.backup" || -L "$file.backup" ]]; then
+                        mv -fT -- "$file.backup" "$file.backup.2"
+                      fi
+                      mv -T -- "$file" "$file.backup"
+                    '';
+                  }
+                }/bin/home-manager-backup";
               };
-            }
+            })
           ];
         };
       };

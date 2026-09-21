@@ -119,5 +119,9 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
 
 ## Usage Notes
 
+- Home Manager keeps two backups of conflicting local files: `.backup` (newest)
+  and `.backup.2` (previous). A new conflict replaces the oldest backup, then
+  installs the declared configuration. Normal updates to managed symlinks do not
+  create backups. Older manually named backups are left untouched.
 - Window management: Use left alt + keys (or ralt) for navigation and window operations
 - Status bar: Toggle with shift + left alt + space

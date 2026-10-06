@@ -11,22 +11,50 @@ backups are not imported. No credentials belong in these tracked files.
 
 ## Two profiles
 
-`opencode` runs lite: the Anthropic auth plugin, explicitly declared MCP servers,
-native subagents, and selected native skills. It does not load the
-oh-my-openagent plugin. `opencode-omo` is a wrapper that adds oh-my-openagent on
-top of exactly that configuration.
+`opencode` runs lite on OpenCode V2: the Anthropic auth plugin, explicitly
+declared MCP servers, native subagents, and selected native skills. It does not
+load the oh-my-openagent plugin. `opencode-omo` is a wrapper that runs OpenCode V1
+with oh-my-openagent on top of exactly that configuration. omo is a V1 plugin, and
+V1 plugins do not run in V2.
 
-Both share one database, one credential store and one plugin cache, because only
-`XDG_CONFIG_HOME` selects the config directory while `data`, `cache` and `state`
-stay where they are. Sessions started under one profile are visible from the other.
+V1 comes from nixpkgs. nixpkgs does not package V2, so `opencodeV2Version` in
+`default.nix` pins the signed binary from npm; update its hash whenever you bump
+it. The wrapper turns off V2's self-update, as nixpkgs does for V1.
+
+Both versions read `~/.config/opencode`, but they share no sessions. V2 keeps its
+own database, `opencode-v2.db`, next to V1's `opencode.db` (see below), stores
+credentials in it, and caches plugins under `~/.cache/opencode/npm` rather than
+`packages`. V2 imports `auth.json` on first start; after that each version signs
+in separately. V1 sessions stay reachable under `opencode-omo`.
+
+V2 runs sessions in a background service that its terminal clients share
+(`opencode service status`, `stop`, `restart`). The first client starts it, so the
+service inherits the wrapper's environment. After changing that environment,
+run `opencode service restart`. After a version bump, the next `opencode` start
+replaces the old service by itself.
+
+## Why V2 has its own database
+
+Pointed at `opencode.db`, V2 migrates it in place: it clears V1's event log, adds
+its own tables, and copies every V1 session into them once, in the background.
+Sessions created afterwards still do not cross over in either direction, so
+sharing buys a one-time import at the cost of rewriting a large live database.
+`OPENCODE_DB` in the V2 wrapper avoids that. To import V1 history anyway, back up
+`opencode.db`, remove `OPENCODE_DB`, rebuild, and restart the service.
 
 ## Why the split runs this way around
 
-OpenCode concatenates and de-duplicates `plugin` across every config source, so an
+OpenCode concatenates and de-duplicates plugins across every config source, so an
 extra config file can only add a plugin, never remove one. The lite profile must
 therefore be the one declared in `opencode.json`, with `omo.json` and
 `omo-tui.json` opting back in; `opencode-omo` points `OPENCODE_CONFIG` and
 `OPENCODE_TUI_CONFIG` at them.
+
+The Anthropic auth plugin has one release line per OpenCode version, and neither
+loads in the other version. V2 reads both its own `plugins` key and V1's `plugin`
+key, while V1 skips `plugins` with a warning in its log. `opencode.json`
+therefore declares only the 2.x line, under `plugins`, and `omo.json` declares
+the 1.x line under `plugin`.
 
 Leaving omo out of `opencode.json` also protects the lite profile. omo's TUI
 self-heal resolves `XDG_CONFIG_HOME/opencode`, looks for itself in that

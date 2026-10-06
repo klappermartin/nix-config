@@ -7,12 +7,14 @@
 let
   jsonFormat = pkgs.formats.json { };
 
-  # Stay on 1.x (2.x needs OpenCode v2). Anthropic gates models on the Claude
-  # Code version this plugin reports; on 400 `claude_code_version_too_old`, bump
-  # it or set `ANTHROPIC_CLAUDE_CODE_VERSION`.
-  anthropicAuthPlugin = "@ex-machina/opencode-anthropic-auth@1.8.6";
+  # 1.x loads only in OpenCode V1 and 2.x (npm `next` tag) only in V2. Anthropic
+  # gates models on the Claude Code version this plugin reports; on 400
+  # `claude_code_version_too_old`, bump it or set `ANTHROPIC_CLAUDE_CODE_VERSION`.
+  anthropicAuthPluginV1 = "@ex-machina/opencode-anthropic-auth@1.8.6";
+  anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
   omoPluginVersion = "4.19.4";
   omoPlugin = "oh-my-openagent@${omoPluginVersion}";
+  opencodeV2Version = "2.0.24";
   codegraphVersion = "1.6.2";
 
   omoSrc = pkgs.fetchzip {
@@ -35,6 +37,26 @@ let
     text = ''exec ${codegraphBundle}/bin/codegraph "$@"'';
   };
 
+  # nixpkgs only packages OpenCode V1, which omo needs; V2 ships signed
+  # per-platform binaries on npm.
+  opencodeV2Bundle = pkgs.fetchzip {
+    url = "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-${opencodeV2Version}.tgz";
+    hash = "sha256-NiD8JtQjJkI1D/U40M2TbfjCw6aifz3JBov/xu7UsXU=";
+  };
+
+  # Like the nixpkgs V1 wrapper: ripgrep from nixpkgs instead of a downloaded
+  # copy, and no self-update. The background service inherits this environment.
+  opencodeV2 = pkgs.writeShellApplication {
+    name = "opencode";
+    runtimeInputs = [ pkgs.ripgrep ];
+    runtimeEnv = {
+      OPENCODE_DISABLE_AUTOUPDATE = "1";
+      # Keeps V2 from migrating V1's `opencode.db` in place. See README.md.
+      OPENCODE_DB = "opencode-v2.db";
+    };
+    text = ''exec ${opencodeV2Bundle}/bin/opencode "$@"'';
+  };
+
   switcher = pkgs.writeShellApplication {
     name = "activate-oh-my-openagent-profile.sh";
     runtimeInputs = [ pkgs.coreutils ];
@@ -47,10 +69,15 @@ let
   omoTuiConfigPath = "${opencodeConfigDirectory}/omo-tui.json";
 
   # Extra configs can only add plugins, not remove them, so `opencode.json`
-  # stays lite and `opencode-omo` adds omo via these files. See README.md.
+  # stays lite and `opencode-omo` adds omo via these files. V1 skips the V2
+  # `plugins` key in `opencode.json`, so its auth plugin comes from here too.
+  # See README.md.
   omoServerConfig = jsonFormat.generate "opencode-omo.json" {
     "$schema" = "https://opencode.ai/config.json";
-    plugin = [ omoPlugin ];
+    plugin = [
+      anthropicAuthPluginV1
+      omoPlugin
+    ];
   };
 
   omoTuiConfig = jsonFormat.generate "opencode-omo-tui.json" {
@@ -65,16 +92,18 @@ let
       export OPENCODE_TUI_CONFIG=${lib.escapeShellArg omoTuiConfigPath}
       # omo's codegraph auto-init uses this binary instead of provisioning its own.
       export OMO_CODEGRAPH_BIN=${lib.escapeShellArg (lib.getExe codegraph)}
-      exec ${lib.escapeShellArg "${config.programs.opencode.package}/bin/opencode"} "$@"
+      # omo is a V1 plugin and V1 plugins do not run in V2.
+      exec ${lib.escapeShellArg "${pkgs.opencode}/bin/opencode"} "$@"
     '';
   };
 in
 {
   programs.opencode = {
     enable = true;
+    package = opencodeV2;
     settings = {
-      # No omo here; `opencode-omo` adds it.
-      plugin = [ anthropicAuthPlugin ];
+      # V2 key, skipped by V1. No omo here; `opencode-omo` adds it.
+      plugins = [ anthropicAuthPluginV2 ];
       mcp = {
         codegraph = {
           type = "local";

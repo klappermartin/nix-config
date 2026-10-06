@@ -58,10 +58,6 @@
         };
       }
       {
-        name = "kitlangton-hex";
-        greedy = true;
-      }
-      {
         name = "google-drive";
         greedy = true;
         args = {

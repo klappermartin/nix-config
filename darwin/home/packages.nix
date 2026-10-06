@@ -35,6 +35,7 @@
     gnupg
     google-chrome
     google-cloud-sdk
+    handy
     hyperfine
     kitty
     nerd-fonts.jetbrains-mono

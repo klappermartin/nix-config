@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable-2511.url = "github:NixOS/nixpkgs/release-25.11";
+    nixpkgs-stable-2605.url = "github:NixOS/nixpkgs/release-26.05";
 
     darwin = {
       url = "github:nix-darwin/nix-darwin/master";
@@ -49,6 +50,7 @@
     inputs@{
       nixpkgs,
       nixpkgs-stable-2511,
+      nixpkgs-stable-2605,
       home-manager,
       darwin,
       nix-homebrew,
@@ -60,7 +62,7 @@
         "mb-pro" = darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";
           specialArgs = {
-            pkgs-stable = import nixpkgs-stable-2511 {
+            pkgs-stable = import nixpkgs-stable-2605 {
               inherit system;
               config.allowUnfree = true;
             };
@@ -89,6 +91,8 @@
               home-manager = {
                 extraSpecialArgs = {
                   inherit (specialArgs) pkgs-stable;
+                  # Newer oxker releases fail macOS snapshot tests: mrjackwills/oxker#73.
+                  oxker-package = nixpkgs-stable-2511.legacyPackages.${system}.oxker;
                 };
 
                 sharedModules = [

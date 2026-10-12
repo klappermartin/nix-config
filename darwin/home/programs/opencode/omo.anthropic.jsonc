@@ -16,7 +16,9 @@
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
   "codegraph": {},
   "[opencode]": {
-    "codegraph": {},
+    "codegraph": {
+      "auto_init": false
+    },
     "model_fallback": true,
     "runtime_fallback": true,
     "agents": {

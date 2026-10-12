@@ -28,13 +28,22 @@ let
     hash = "sha256-d88aph8IJbcjcQGuJRV0PlIGyQ/hkaOJ6k8RRkILrq8=";
   };
 
+  # CodeGraph has no global codegraph.json. Extend its built-in directory skips
+  # for every project; node_modules is already excluded upstream.
+  codegraphPatchedBundle = pkgs.runCommand "codegraph-${codegraphVersion}-bundle" { } ''
+    cp -R ${codegraphBundle} "$out"
+    chmod -R u+w "$out"
+    substituteInPlace "$out/lib/dist/extraction/index.js" \
+      --replace-fail "'.yarn', '.pnpm-store'," "'.yarn', '.pnpm-store', '.devenv', 'devenv',"
+  '';
+
   codegraph = pkgs.writeShellApplication {
     name = "codegraph";
     runtimeEnv = {
       CODEGRAPH_TELEMETRY = "0";
       DO_NOT_TRACK = "1";
     };
-    text = ''exec ${codegraphBundle}/bin/codegraph "$@"'';
+    text = ''exec ${codegraphPatchedBundle}/bin/codegraph "$@"'';
   };
 
   # nixpkgs only packages OpenCode V1, which omo needs; V2 ships signed
@@ -90,7 +99,7 @@ let
     text = ''
       export OPENCODE_CONFIG=${lib.escapeShellArg omoServerConfigPath}
       export OPENCODE_TUI_CONFIG=${lib.escapeShellArg omoTuiConfigPath}
-      # omo's codegraph auto-init uses this binary instead of provisioning its own.
+      # OMO uses this binary for opted-in projects instead of provisioning its own.
       export OMO_CODEGRAPH_BIN=${lib.escapeShellArg (lib.getExe codegraph)}
       # omo is a V1 plugin and V1 plugins do not run in V2.
       exec ${lib.escapeShellArg "${pkgs.opencode}/bin/opencode"} "$@"

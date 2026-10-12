@@ -107,10 +107,32 @@ compiled agents and ignores colliding user agent files.
 `codegraphVersion` and its hash; the main npm package is only a launcher for it.
 The `codegraph` command is on PATH with telemetry and update checks turned off.
 
-The lite profile has no OMO auto-init, so index a project once with
-`codegraph init` (or by opening it under `opencode-omo`); until then the
-codegraph tools have nothing to query. The index lives in `.codegraph/`, whose
-own `.gitignore` hides everything except itself, so after a manual init add
-`.codegraph/` to `.git/info/exclude` as OMO's auto-init does. `opencode-omo`
-sets `OMO_CODEGRAPH_BIN`, so OMO's auto-init uses the same binary instead of
-provisioning its own copy under `~/.omo/codegraph`.
+Indexing is opt-in: run `codegraph init` once at the root of a repository you
+want indexed. The lite profile never auto-initializes projects, and every OMO
+profile sets `[opencode].codegraph.auto_init = false`. Existing indexes still
+sync automatically. Avoid initializing aggregate folders such as `~/code` or
+`~/code/ax`: they can index all their child repositories again. CodeGraph can
+discover an existing index in an ancestor directory, so remove unwanted parent
+indexes rather than expecting a missing child config to disable them.
+The pinned 1.6.2 MCP server still exposes per-project tools when no default
+index exists, with `projectPath` required; it does not initialize a new index.
+The current website instead describes an inactive server with no tools, so do
+not use tool visibility as the opt-in check for this pinned version.
+
+`codegraph.json` is optional project configuration, not an enable switch.
+CodeGraph 1.6.2 reads it only at the index root; it does not merge a global or
+ancestor `codegraph.json`. The Nix bundle extends the built-in directory skips
+with `.devenv/` and `devenv/`; `node_modules/` is already skipped upstream. These
+defaults apply at every depth to full indexing, sync, and watching. Upstream
+allows `.gitignore` negations to override built-in skips; use the project's
+`codegraph.json` `exclude` list for exclusions that must take precedence.
+
+The index lives in `.codegraph/`, whose own `.gitignore` hides everything except
+itself. After a manual init, add `.codegraph/` to `.git/info/exclude`.
+`opencode-omo` sets `OMO_CODEGRAPH_BIN` so opted-in projects use the same binary
+instead of provisioning another copy under `~/.omo/codegraph`. After rebuilding,
+rerun the profile switcher if the active configuration is a regular-file copy.
+
+See the upstream [configuration](https://colbymchenry.github.io/codegraph/getting-started/configuration/)
+and [MCP server](https://colbymchenry.github.io/codegraph/reference/mcp-server/)
+documentation for project configuration and MCP usage.

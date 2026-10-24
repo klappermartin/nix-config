@@ -98,30 +98,44 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
 
 2. **Development Setup**
    - [ ] Move dev-related packages into a dedicated module
-   - [ ] Set up system PostgreSQL
-   - [ ] evaluate overwriting system ssh explicitly
 
 3. **Sketchybar Configuration**
-   - [ ] Move Lua configuration to a better location
    - [ ] Fetch/copy examples from sketchybar config
    - [ ] Complete sketchybar implementation
 
 4. **Extensions & Settings**
    - [ ] Persist extension configurations separately
    - [ ] Configure browser extension settings
-   - [ ] Set up FZF history settings
-   - [ ] don't use system python for anything - not good
 
 5. **Shell Configuration**
    - [ ] Research / Set up aliases for Kagi search lenses
 
-6. **App Configurations**
-   - [ ] Create custom colors and icons for LSD
-
-7. **General**
+6. **General**
     - [ ] Setup non-darwin config before moving machine
 
 ## Usage Notes
+
+- SSH: Home Manager manages `~/.ssh/config`; add local hosts and identities in
+  `~/.ssh/config.d/*.conf` without rebuilding. For example:
+
+  ```sshconfig
+  Host my-server
+    HostName server.example.com
+    User martin
+    IdentityFile ~/.ssh/id_ed25519_server
+    IdentitiesOnly yes
+  ```
+
+  Local files are read before the managed GitHub configuration and the Colima
+  include. Use host-specific blocks; `IdentityFile` entries accumulate, so use
+  distinct host aliases for different identities. Keep keys outside the repo.
+- fzf history (Ctrl-R): recent matches first; Ctrl-R toggles relevance sorting,
+  Ctrl-Space toggles the full-command preview, Ctrl-Y copies, and Enter inserts
+  the command for editing.
+- btop uses the terminal's ANSI colors and background. In-app settings changes
+  last for the session; persistent settings live in `programs/default.nix`.
+- `ls` uses the system implementation. `lsd` remains available explicitly with
+  classic formatting (no icons, colors, hyperlinks, or directories-first sorting).
 
 - Home Manager keeps two backups of conflicting local files: `.backup` (newest)
   and `.backup.2` (previous). A new conflict replaces the oldest backup, then

@@ -4,8 +4,6 @@
   username,
   ...
 }:
-# TODO: Setup system postgres
-# TODO: ? Overwrite default system ssh
 {
   environment = {
     # reference xcode from the system closure so it's gc-rooted (it has no bin/share to link via systemPackages)
@@ -113,22 +111,30 @@
           mouse_action1 = "move";
           mouse_action2 = "resize";
         };
-      # TODO: update these rules to actually match correctly + figure out default float positions (center + size)
       extraConfig = ''
         # Load the scripting addition (requires enableScriptingAddition = true)
         sudo yabai --load-sa
-        yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+        yabai -m signal --add label='load-sa' event=dock_did_restart action="sudo yabai --load-sa"
 
-        yabai -m rule --add label='Finder' app='^Finder$' title='(Co(py|nnect)|Move|Info|Pref)' manage=off
-        yabai -m rule --add label='Safari' app='^Safari$' title='^(General|(Tab|Password|Website|Extension)s|AutoFill|Se(arch|curity)|Privacy|Advance)$' manage=off
-        yabai -m rule --add label='System Settings' app='^System Settings$' title='.*' manage=off
+        # Match accessibility dialogs, not arbitrary Finder folders / browser
+        # tabs whose titles happen to contain "Info", "General", etc.
+        yabai -m rule --add label='Finder' app='^Finder$' subrole='^AX(System)?Dialog$' manage=off
+        yabai -m rule --add label='Safari' app='^Safari$' subrole='^AX(System)?Dialog$' manage=off
+        yabai -m rule --add label='Finder Settings' app='^Finder$' title='^Finder (Settings|Preferences)$' manage=off
+        yabai -m rule --add label='System Settings' app='^System Settings$' manage=off
+
+        # Resizable utility windows: centered at 2/3 of the display. Limit the
+        # grid to standard windows so child dialogs keep their natural size.
         yabai -m rule --add label='App Store' app='^App Store$' manage=off
+        yabai -m rule --add label='App Store layout' app='^App Store$' subrole='^AXStandardWindow$' grid=6:6:1:1:4:4
         yabai -m rule --add label='Activity Monitor' app='^Activity Monitor$' manage=off
+        yabai -m rule --add label='Activity Monitor layout' app='^Activity Monitor$' subrole='^AXStandardWindow$' grid=6:6:1:1:4:4
         yabai -m rule --add label='Calculator' app='^Calculator$' manage=off
         yabai -m rule --add label='Dictionary' app='^Dictionary$' manage=off
-        yabai -m rule --add label='Software Update' title='Software Update' manage=off
-        yabai -m rule --add label='About This Mac' app='System Information' title='About This Mac' manage=off
-        yabai -m rule --add label='Raycast Settings' app='Raycast' title='Raycast Settings' manage=off
+        yabai -m rule --add label='Dictionary layout' app='^Dictionary$' subrole='^AXStandardWindow$' grid=6:6:1:1:4:4
+        yabai -m rule --add label='Software Update' app='^(Software Update|System Settings|System Preferences)$' title='^Software Update$' manage=off
+        yabai -m rule --add label='About This Mac' app='^System Information$' title='^About This Mac$' manage=off
+        yabai -m rule --add label='Raycast Settings' app='^Raycast$' title='^Raycast (Settings|Preferences)$' manage=off
       '';
     };
   };
@@ -202,7 +208,6 @@
       };
     };
 
-    # FIXME: Migrate user-relevant options to home-manager / monitor where nix-darwin moves them
     primaryUser = username;
 
     stateVersion = 5;

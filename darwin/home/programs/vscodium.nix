@@ -3,7 +3,6 @@
   ...
 }:
 {
-  # TODO: Don't search for updates.
   programs.vscodium = {
     enable = true;
 

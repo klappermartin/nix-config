@@ -153,7 +153,7 @@
             "WhatsApp"
             "Slack"
             "Thunderbird"
-            # "Firefox Developer Edition"
+            "Firefox Developer Edition"
             "kitty"
             "Obsidian"
           ];

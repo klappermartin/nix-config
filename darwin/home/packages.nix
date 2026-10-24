@@ -22,8 +22,6 @@
     docker
     # provides docker-credential-osxkeychain (referenced by ~/.docker/config.json credsStore)
     docker-credential-helpers
-    # TODO: Re-enable and test if profiles are working for devedition again
-    # firefox-devedition
     fx
     jq
     gdu

@@ -5,14 +5,19 @@
 {
   programs.firefox = {
     enable = true;
+    package = pkgs.firefox-devedition;
+    # bundle id of the nixpkgs build, used for policies via `defaults`
+    darwinDefaultsId = "org.nixos.firefoxdeveloperedition.plist";
     languagePacks = [
       "en-US"
       "de"
     ];
     profiles = {
-      martin = {
+      # Developer Edition only uses a profile with this exact name and otherwise
+      # creates a fresh one on every launch; `path` keeps the existing directory
+      dev-edition-default = {
         id = 0;
-        name = "martin";
+        path = "martin";
         isDefault = true;
         # mostly taken from: https://github.com/gvolpe/nix-config
         settings = {

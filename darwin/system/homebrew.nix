@@ -59,9 +59,7 @@
     masApps = { };
     onActivation = {
       autoUpdate = false;
-      # TODO: back to "zap" after one switch; "uninstall" keeps the data of the
-      # slack/whatsapp/thunderbird casks that moved to nixpkgs
-      cleanup = "uninstall";
+      cleanup = "zap";
       # taps are pinned via flake.lock, so this only upgrades casks after `nix flake update`
       upgrade = true;
     };

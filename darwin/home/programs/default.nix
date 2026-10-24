@@ -45,8 +45,6 @@
       # TODO: fzf history settings
     };
 
-    gpg.enable = true;
-
     herdr.enable = true;
 
     lsd = {

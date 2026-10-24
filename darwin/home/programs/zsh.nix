@@ -1,6 +1,7 @@
 {
-  pkgs,
   config,
+  lib,
+  pkgs,
   ...
 }:
 {
@@ -20,14 +21,21 @@
     enableCompletion = true;
     autosuggestion.enable = true;
 
-    # p10k config
-    # you should use position after the commands output
-    initContent = ''
-      # extra config (before aliases)
-      source ~/.p10k.zsh
-      export YSU_MESSAGE_POSITION="after"
-      unalias rm # unalias rm -i from common-aliases
-    '';
+    initContent = lib.mkMerge [
+      # p10k instant prompt has to come first; anything needing console input
+      # (password prompts, [y/n] confirmations) must stay above this block
+      (lib.mkOrder 500 ''
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
+      ''
+        source ~/.p10k.zsh
+        # show you-should-use hints after the command output
+        export YSU_MESSAGE_POSITION="after"
+        unalias rm # unalias rm -i from common-aliases
+      ''
+    ];
 
     plugins =
       with pkgs;
@@ -90,6 +98,13 @@
       speedtest = "${pkgs.speedtest-cli}/bin/speedtest-cli";
       pn = "pnpm";
     };
-    # TODO: History options
+    history = {
+      size = 100000;
+      save = 100000;
+      # timestamps + durations, readable via `history -i` / `fc -li`
+      extended = true;
+      ignoreAllDups = true;
+      expireDuplicatesFirst = true;
+    };
   };
 }

@@ -1,13 +1,24 @@
 {
+  config,
   pkgs,
   ...
 }:
+let
+  email = "64156820+klappermartin@users.noreply.github.com";
+  sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIESQFjRlkApLrMLCnGRedOl12/Zvf5V5wZsUJQoRNaZ9";
+in
 {
   programs.git = {
     enable = true;
     signing = {
-      key = null;
+      format = "ssh";
+      # must be added on GitHub as a *signing* key
+      key = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
       signByDefault = true;
+      # lets `git log --show-signature` verify own commits locally
+      allowedSigners = ''
+        ${email} namespaces="git" ${sshPublicKey}
+      '';
     };
     settings = {
       alias = {
@@ -73,7 +84,7 @@
       };
 
       help = {
-        autocorrect = 1;
+        autocorrect = "prompt";
       };
 
       init = {
@@ -95,7 +106,7 @@
 
       user = {
         name = "Martin Klapper";
-        email = "64156820+klappermartin@users.noreply.github.com";
+        inherit email;
       };
     };
   };
@@ -109,6 +120,20 @@
     gitCredentialHelper = {
       enable = true;
       hosts = [ "https://github.com" ];
+    };
+  };
+
+  # The key's passphrase lives in the keychain (UseKeychain in ~/.ssh/config), but
+  # the agent starts empty after login; without this, signing fails until the first ssh.
+  launchd.agents.ssh-add-keychain = {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        "/usr/bin/ssh-add"
+        "--apple-load-keychain"
+        "-q"
+      ];
+      RunAtLoad = true;
     };
   };
 }

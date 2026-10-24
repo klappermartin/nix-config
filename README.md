@@ -113,7 +113,6 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
    - [ ] don't use system python for anything - not good
 
 5. **Shell Configuration**
-   - [ ] Configure history options for ZSH
    - [ ] Research / Set up aliases for Kagi search lenses
 
 6. **App Configurations**

@@ -75,21 +75,75 @@
       ];
     };
 
-    herdr.enable = true;
+    herdr = {
+      enable = true;
+      # Preserve in-app settings; these declared defaults win on rebuild.
+      mutableSettings = true;
+      settings = {
+        onboarding = false;
+        theme = {
+          name = "terminal";
+          auto_switch = false;
+        };
+        terminal = {
+          default_shell = "${pkgs.zsh}/bin/zsh";
+          shell_mode = "auto";
+          new_cwd = "follow";
+        };
+        update.version_check = false;
+        ui = {
+          status_indicators = "symbols";
+          sound.enabled = false;
+          agent_panel_sort = "priority";
+          toast.delivery = "terminal";
+          prompt_new_tab_name = false;
+          show_agent_labels_on_pane_borders = true;
+        };
+        keys.command = [
+          {
+            key = "prefix+f";
+            type = "plugin_action";
+            command = "persiyanov.reviewr.toggle";
+            description = "toggle reviewr";
+          }
+        ];
+      };
+    };
 
     lsd = {
       enable = true;
-      # Keep ls and its usual aliases on the system implementation, like remote
-      # hosts. Explicit lsd calls use its ls-compatible, undecorated mode.
-      enableBashIntegration = false;
-      enableFishIntegration = false;
-      enableZshIntegration = false;
+      enableBashIntegration = true;
+      enableZshIntegration = true;
       settings = {
-        classic = true;
-        size = "bytes";
-        date = "date";
-        sorting.dir-grouping = "none";
-        hyperlink = "never";
+        classic = false;
+        layout = "grid";
+        blocks = [
+          "permission"
+          "user"
+          "size"
+          "date"
+          "name"
+        ];
+        color = {
+          when = "auto";
+          theme = "default";
+        };
+        icons = {
+          when = "auto";
+          theme = "fancy";
+          separator = "  ";
+        };
+        size = "short";
+        date = "relative";
+        permission = "rwx";
+        sorting = {
+          column = "name";
+          dir-grouping = "first";
+        };
+        hyperlink = "auto";
+        symlink-arrow = "→";
+        # Avoid recursively walking large repositories just to list a directory.
+        total-size = false;
       };
     };
 

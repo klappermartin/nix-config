@@ -134,8 +134,22 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
   the command for editing.
 - btop uses the terminal's ANSI colors and background. In-app settings changes
   last for the session; persistent settings live in `programs/default.nix`.
-- `ls` uses the system implementation. `lsd` remains available explicitly with
-  classic formatting (no icons, colors, hyperlinks, or directories-first sorting).
+- Herdr settings stay writable. Rebuilds merge the declared settings into
+  `~/.config/herdr/config.toml`; declared values (including the command-keybinding
+  array) win. Removing a declaration does not remove its saved value.
+- Reviewr: `Ctrl-B`, then `f` toggles the review pane. Select lines with `v`,
+  add comments with `c`, and send them to the agent with `s`. The plugin is
+  installed separately from the Nix configuration:
+
+  ```sh
+  herdr plugin install persiyanov/herdr-reviewr --ref v0.48.0
+  ```
+
+  This pins the plugin to that release; install with a newer `--ref` to upgrade.
+- `ls`, `ll`, `la`, `lla`, `lt`, and `llt` use lsd: automatic colors and Nerd Font
+  icons, directories first, compact sizes, and relative dates. `ll` shows
+  permissions, owner, size, date, and name; `lt` shows a tree. Use `/bin/ls` for
+  the macOS implementation. Colors, icons, and hyperlinks are automatic.
 
 - Home Manager keeps two backups of conflicting local files: `.backup` (newest)
   and `.backup.2` (previous). A new conflict replaces the oldest backup, then

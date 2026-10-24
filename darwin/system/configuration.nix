@@ -70,8 +70,8 @@
 
     yabai = {
       enable = true;
-      # SIP needs to be disabled, see: https://github.com/koekeishiya/yabai/wiki#quickstart-guide
-      enableScriptingAddition = true;
+      # Keep window management compatible with fully enabled SIP.
+      enableScriptingAddition = false;
       package = pkgs.yabai;
       config =
         let
@@ -86,8 +86,6 @@
         {
           layout = "bsp";
           window_placement = "second_child";
-          window_shadow = "float";
-          window_topmost = "off";
 
           external_bar = "all:34:0";
 
@@ -99,6 +97,7 @@
 
           mouse_follows_focus = "autoraise";
           focus_follows_mouse = "off";
+          skip_window_focus_animation = "on";
 
           window_opacity = "off";
 
@@ -112,10 +111,6 @@
           mouse_action2 = "resize";
         };
       extraConfig = ''
-        # Load the scripting addition (requires enableScriptingAddition = true)
-        sudo yabai --load-sa
-        yabai -m signal --add label='load-sa' event=dock_did_restart action="sudo yabai --load-sa"
-
         # Match accessibility dialogs, not arbitrary Finder folders / browser
         # tabs whose titles happen to contain "Info", "General", etc.
         yabai -m rule --add label='Finder' app='^Finder$' subrole='^AX(System)?Dialog$' manage=off

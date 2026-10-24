@@ -4,6 +4,10 @@
   ...
 }:
 {
+  # ~/.p10k.zsh is a read-only link; to reconfigure, `rm ~/.p10k.zsh && p10k configure`,
+  # then copy the generated file back over ./p10k.zsh
+  home.file.".p10k.zsh".source = ./p10k.zsh;
+
   home.sessionVariables = {
     TERMINAL = "kitty";
     EDITOR = "zeditor";
@@ -29,12 +33,7 @@
       with pkgs;
       let
         # Using lots of plugins from omz: https://github.com/ohmyzsh/ohmyzsh
-        omzPlugins = fetchFromGitHub {
-          owner = "ohmyzsh";
-          repo = "ohmyzsh";
-          rev = "master";
-          sha256 = "sha256-rI673tQ3W4U9N5i8LZx9dpKzft7+Y0UZ7iTSJwnoSSE=";
-        };
+        omzPlugins = "${oh-my-zsh}/share/oh-my-zsh";
       in
       [
         {
@@ -44,12 +43,7 @@
         }
         {
           name = "zsh-you-should-use";
-          src = fetchFromGitHub {
-            owner = "MichaelAquilina";
-            repo = "zsh-you-should-use";
-            rev = "1.9.0";
-            sha256 = "sha256-+3iAmWXSsc4OhFZqAMTwOL7AAHBp5ZtGGtvqCnEOYc0=";
-          };
+          src = "${zsh-you-should-use}/share/zsh/plugins/you-should-use";
           file = "you-should-use.plugin.zsh";
         }
         # Omz plugins

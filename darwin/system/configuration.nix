@@ -1,20 +1,21 @@
 {
   pkgs,
-  pkgs-stable,
   config,
+  username,
   ...
 }:
 # TODO: Setup system postgres
 # TODO: ? Overwrite default system ssh
 {
   environment = {
+    # reference xcode from the system closure so it's gc-rooted (it has no bin/share to link via systemPackages)
+    # TODO: re-enable once Xcode 26.5 is re-added to the store (needs Apple ID for download)
+    # etc."xcode".source = pkgs.darwin.xcode_26_5_Apple_silicon;
     # symlink system packages to home manager zsh for completion access
     pathsToLink = [ "/share/zsh/" ];
     systemPackages = with pkgs; [
-      darwin.xcode_26_5_Apple_silicon
       devenv
       # keepassxc
-      nh
       vim
     ];
   };
@@ -23,103 +24,46 @@
     enable = true;
     # use taps declared by nix-homebrew
     taps = builtins.attrNames config.nix-homebrew.taps;
-    brews = [
-      "hasura-cli"
-    ];
+    brews = [];
     caskArgs = {
       require_sha = true;
     };
-    casks = [
-      {
-        name = "balenaetcher";
-        greedy = true;
-      }
-      # included until https://github.com/bitwarden/clients/pull/20448 closes (bitwarden updates electron version)
-      {
-        name = "bitwarden";
-        greedy = true;
-      }
-      {
-        name = "figma";
-        greedy = true;
-      }
-      {
-        name = "font-sf-mono";
-        greedy = true;
-        args = {
-          require_sha = false;
+    casks =
+      let
+        cask = name: {
+          inherit name;
+          greedy = true;
         };
-      }
-      {
-        name = "font-sf-pro";
-        greedy = true;
-        args = {
-          require_sha = false;
-        };
-      }
-      {
-        name = "google-drive";
-        greedy = true;
-        args = {
-          require_sha = false;
-        };
-      }
-      {
-        name = "karabiner-elements";
-        greedy = true;
-      }
-      {
-        name = "linear";
-        greedy = true;
-      }
-      {
-        name = "microsoft-edge";
-        greedy = true;
-      }
-      {
-        name = "nvidia-geforce-now";
-        greedy = true;
-        args = {
-          require_sha = false;
-        };
-      }
-      {
-        name = "raspberry-pi-imager";
-        greedy = true;
-      }
-      {
-        name = "slack";
-        greedy = true;
-      }
-      {
-        name = "spotify";
-        greedy = true;
-        args = {
-          require_sha = false;
-        };
-      }
-      {
-        name = "thunderbird";
-        greedy = true;
-      }
-      {
-        name = "whatsapp";
-        greedy = true;
-      }
-    ];
+        # casks that don't publish a sha256
+        unverifiedCask = name: cask name // { args.require_sha = false; };
+      in
+      map cask [
+        "balenaetcher"
+        "karabiner-elements"
+        "linear"
+        "slack"
+        "thunderbird"
+        "whatsapp"
+      ]
+      ++ map unverifiedCask [
+        "font-sf-mono"
+        "font-sf-pro"
+        "nvidia-geforce-now"
+        "spotify"
+      ];
 
     masApps = { };
     onActivation = {
       autoUpdate = false;
       cleanup = "zap";
-      upgrade = false;
+      # taps are pinned via flake.lock, so this only upgrades casks after `nix flake update`
+      upgrade = true;
     };
   };
 
   nix.settings.experimental-features = "nix-command flakes";
+  # merged with nix-darwin's default (cache.nixos.org)
   nix.settings.substituters = [
-    # default nixos cace
-    "https://cache.nixos.org/"
     # devenv cache
     "https://devenv.cachix.org"
   ];
@@ -132,16 +76,20 @@
     allowUnfree = true;
   };
 
+  nix.optimise.automatic = true;
+
   programs = {
+    # runs `nh clean all` as root, so system generations are collected too
+    nh = {
+      enable = true;
+      flake = "${config.users.users.${username}.home}/nix";
+      clean = {
+        enable = true;
+        extraArgs = "--keep 5 --keep-since 7d";
+      };
+    };
+
     zsh = {
-      enable = true;
-    };
-
-    _1password = {
-      enable = true;
-    };
-
-    _1password-gui = {
       enable = true;
     };
   };
@@ -229,8 +177,10 @@
   system = {
     activationScripts = {
       postActivation.text = ''
-        # rosetta to run x86 on silicon
-        softwareupdate --install-rosetta --agree-to-license
+        # rosetta to run x86 on silicon (needed by nix-homebrew.enableRosetta)
+        if ! /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null; then
+          softwareupdate --install-rosetta --agree-to-license
+        fi
       '';
     };
 
@@ -298,15 +248,15 @@
     };
 
     # FIXME: Migrate user-relevant options to home-manager / monitor where nix-darwin moves them
-    primaryUser = "martin";
+    primaryUser = username;
 
     stateVersion = 5;
   };
 
   users.users = {
-    martin = {
-      name = "martin";
-      home = "/Users/martin";
+    ${username} = {
+      name = username;
+      home = "/Users/${username}";
     };
   };
 }

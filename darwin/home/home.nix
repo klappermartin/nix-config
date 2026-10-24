@@ -6,11 +6,8 @@
     ./services
   ];
 
-  home = {
-    homeDirectory = "/Users/martin";
-    username = "martin";
-    stateVersion = "25.05";
-  };
+  # username and homeDirectory are inherited from users.users via the home-manager darwin module
+  home.stateVersion = "25.05";
 
   targets.darwin = {
     linkApps.enable = false;

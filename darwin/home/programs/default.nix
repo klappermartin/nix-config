@@ -46,6 +46,8 @@
 
     gpg.enable = true;
 
+    herdr.enable = true;
+
     lsd = {
       enable = true;
       enableZshIntegration = true;

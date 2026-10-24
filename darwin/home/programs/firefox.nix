@@ -229,7 +229,6 @@
             dearrow
             decentraleyes
             ff2mpv
-            onepassword-password-manager
             privacy-badger
             react-devtools
             reduxdevtools

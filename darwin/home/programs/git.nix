@@ -51,6 +51,9 @@
         master = {
           mergeoptions = "--no-edit";
         };
+        main = {
+          mergeoptions = "--no-edit";
+        };
       };
 
       color = {
@@ -95,13 +98,6 @@
         email = "64156820+klappermartin@users.noreply.github.com";
       };
     };
-
-    includes = [
-      {
-        path = "~/code/ax/.gitconfig";
-        condition = "gitdir:~/code/ax/";
-      }
-    ];
   };
 
   programs.gh = {

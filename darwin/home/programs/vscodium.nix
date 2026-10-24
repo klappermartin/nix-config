@@ -33,7 +33,8 @@
             redhat.vscode-yaml
 
             # python
-            # ms-python.python
+            ms-python.python
+            ms-python.debugpy
             ms-python.vscode-pylance
             charliermarsh.ruff
 
@@ -42,9 +43,8 @@
             # golang
             golang.go
 
-            # TODO: Re-enable when updated to sha match
             # rust
-            # rust-lang.rust-analyzer
+            rust-lang.rust-analyzer
 
             # gql
             graphql.vscode-graphql
@@ -55,6 +55,7 @@
             yoavbls.pretty-ts-errors
 
             # html/css
+            pranaygp.vscode-css-peek
             bradlc.vscode-tailwindcss
             formulahendry.auto-close-tag
             formulahendry.auto-rename-tag
@@ -62,6 +63,7 @@
             naumovs.color-highlight
 
             # format
+            oxc.oxc-vscode
             dbaeumer.vscode-eslint
             esbenp.prettier-vscode
 
@@ -79,6 +81,8 @@
             wix.vscode-import-cost
             usernamehw.errorlens
             streetsidesoftware.code-spell-checker
+            streetsidesoftware.code-spell-checker-german
+            timonwong.shellcheck
             shardulm94.trailing-spaces
             aaron-bond.better-comments
           ]
@@ -86,103 +90,61 @@
             {
               name = "sqltools";
               publisher = "mtxr";
-              version = "latest";
+              version = "0.28.6";
               sha256 = "sha256-SpVFH+Qf9tpnNm4J5z3fOhWzzYP0LknDNm88JHMxkIU=";
-            }
-            {
-              name = "rust-analyzer";
-              publisher = "rust-lang";
-              version = "latest";
-              sha256 = "sha256-UVjsTSanzD/x6B5pBsYnYuspvjubqwEx1hkfnHg0uxI=";
-            }
-            {
-              name = "oxc-vscode";
-              publisher = "oxc";
-              version = "latest";
-              sha256 = "sha256-wosNcp6CaS7WrH3NwXnsnEdABG2G9BZxRflh+lhr9+Q=";
-            }
-            {
-              name = "python";
-              publisher = "ms-python";
-              version = "latest";
-              sha256 = "sha256-Y5tMdJM00ZlXUcKpEr9xiQrPNZmugXMWAb+Zf2U76UY=";
-            }
-            {
-              name = "debugpy";
-              publisher = "ms-python";
-              version = "latest";
-              sha256 = "sha256-U9sS0m5ADo0+AmjcHunWJr9x+JZepXKjqTc8C3nvoGk=";
             }
             {
               name = "playwright";
               publisher = "ms-playwright";
-              version = "latest";
-              sha256 = "sha256-N2U+KvmqslmjXSpHovIbT/iVbSV6JrTu1UsoiolW9/Y=";
+              version = "1.1.20";
+              sha256 = "sha256-6plefZcKexQaSgxEv5eaMWO+2bWWuwki1ml/ZEUCGbw=";
             }
             {
               name = "code-spell-checker-british-english";
               publisher = "streetsidesoftware";
-              version = "latest";
-              sha256 = "sha256-k0pMNGNru93SeXGJ+jeFqHZcCTjyO9qd4AhqFcuzfEU=";
-            }
-            {
-              name = "code-spell-checker-german";
-              publisher = "streetsidesoftware";
-              version = "latest";
-              sha256 = "sha256-zc0cv4AOswvYcC4xJOq2JEPMQ5qTj9Dad5HhxtNETEs=";
+              version = "2.0.1";
+              sha256 = "sha256-CB2lxZlSOlY3E3hX0ZDOez8V5BPJeGYBUjhnLRxoMy4=";
             }
             {
               name = "vscode-todo-highlight";
               publisher = "wayou";
-              version = "latest";
+              version = "1.0.5";
               sha256 = "sha256-CQVtMdt/fZcNIbH/KybJixnLqCsz5iF1U0k+GfL65Ok=";
             }
             {
               name = "tokyo-night-moon";
               publisher = "patricknasralla";
-              version = "latest";
+              version = "1.1.4";
               sha256 = "sha256-8rUbsDCk7JHSN4vn+TNTmIrx8ma53hH/1x0trqDwU7Y=";
-            }
-            {
-              name = "vscode-css-peek";
-              publisher = "pranaygp";
-              version = "latest";
-              sha256 = "sha256-oY+mpDv2OTy5hFEk2DMNHi9epFm4Ay4qi0drCXPuYhU=";
             }
             {
               name = "cucumberautocomplete";
               publisher = "alexkrechik";
-              version = "latest";
-              sha256 = "sha256-bwIwZ9cAgJcUyiFrM9rx0FzCx29F4lRQOnjw5m/bO24=";
+              version = "3.1.1";
+              sha256 = "sha256-0CYg+hb9XZlbTHLObA1JPfD/grJzVr9QN4EwwuX8bAI=";
             }
             {
               name = "language-gettext";
               publisher = "mrorz";
-              version = "latest";
+              version = "0.5.0";
               sha256 = "sha256-1hdT2Fai0o48ojNqsjW+McokD9Nzt2By3vzhGUtgaeA=";
             }
             {
               name = "vscode-typescript-next";
               publisher = "ms-vscode";
-              version = "latest";
+              version = "6.0.20260416";
               sha256 = "sha256-/lvP3a2IJ4PhwThvx0J8wDcch2te2Ezs8v0Lh9A5bpg=";
             }
             {
               name = "react-proptypes-intellisense";
               publisher = "ofhumanbondage";
-              version = "latest";
+              version = "1.0.3";
               sha256 = "sha256-lmAjqOR+rznx5Q7W/ChRg8sb1NhqN2YtrwRn8zHYtRo=";
-            }
-            {
-              name = "shellcheck";
-              publisher = "timonwong";
-              version = "latest";
-              sha256 = "sha256-Yh5C/Rjqtg38BT4D6IuW8Wc5Eq4GzkrpGQYU6U3T/p0=";
             }
             {
               name = "vscode-expo-tools";
               publisher = "expo";
-              version = "latest";
+              version = "1.6.3";
               sha256 = "sha256-vqT/72pUyHtzl0rmUfDgbr7MO+/2dw3EcDeYTkQY/0Y=";
             }
           ];
@@ -199,12 +161,12 @@
             when = "editorTextFocus";
           }
           {
-            key = "alt+control+shitft+left";
+            key = "alt+control+shift+left";
             command = "cursorWordPartLeftSelect";
             when = "editorTextFocus";
           }
           {
-            key = "alt+control+shitft+right";
+            key = "alt+control+shift+right";
             command = "cursorWordPartRightSelect";
             when = "editorTextFocus";
           }

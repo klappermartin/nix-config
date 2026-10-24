@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable-2511.url = "github:NixOS/nixpkgs/release-25.11";
-    nixpkgs-stable-2605.url = "github:NixOS/nixpkgs/release-26.05";
 
     darwin = {
       url = "github:nix-darwin/nix-darwin/master";
@@ -18,11 +17,6 @@
 
     nur = {
       url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -50,22 +44,21 @@
     inputs@{
       nixpkgs,
       nixpkgs-stable-2511,
-      nixpkgs-stable-2605,
       home-manager,
       darwin,
       nix-homebrew,
       ...
     }:
+    let
+      username = "martin";
+    in
     {
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt;
       darwinConfigurations = {
         "mb-pro" = darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";
           specialArgs = {
-            pkgs-stable = import nixpkgs-stable-2605 {
-              inherit system;
-              config.allowUnfree = true;
-            };
+            inherit inputs username;
           };
           modules = [
             ./darwin/system/configuration.nix
@@ -74,7 +67,7 @@
               nix-homebrew = {
                 enable = true;
                 enableRosetta = true;
-                user = "martin";
+                user = username;
                 taps = {
                   "homebrew/homebrew-bundle" = inputs.homebrew-bundle;
                   "homebrew/homebrew-core" = inputs.homebrew-core;
@@ -90,18 +83,14 @@
               ];
               home-manager = {
                 extraSpecialArgs = {
-                  inherit (specialArgs) pkgs-stable;
+                  inherit inputs;
                   # Newer oxker releases fail macOS snapshot tests: mrjackwills/oxker#73.
                   oxker-package = nixpkgs-stable-2511.legacyPackages.${system}.oxker;
                 };
 
-                sharedModules = [
-                  inputs.sops-nix.homeManagerModules.sops
-                ];
-
                 useGlobalPkgs = true;
                 useUserPackages = true;
-                users.martin = {
+                users.${username} = {
                   imports = [
                     ./darwin/home/home.nix
                     ./darwin/home/sketchybar/sketchybar.nix

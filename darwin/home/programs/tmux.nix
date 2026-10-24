@@ -18,7 +18,7 @@
       # use vi key in copy mode
       setw -g mode-keys vi
 
-      # bind ctrl + Arrowkeys to navigate in cli
+      # bind alt + Arrowkeys to move by word in cli
       bind -n M-Left send-keys M-b
       bind -n M-Right send-keys M-f
 
@@ -43,7 +43,7 @@
       tmuxPlugins.yank
     ];
     shell = "${pkgs.zsh}/bin/zsh";
-    terminal = "screen-256color";
+    terminal = "tmux-256color";
     tmuxinator.enable = true;
   };
 }

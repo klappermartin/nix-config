@@ -24,11 +24,6 @@
       url = "github:zhaofengli-wip/nix-homebrew";
     };
 
-    homebrew-bundle = {
-      url = "github:homebrew/homebrew-bundle";
-      flake = false;
-    };
-
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
       flake = false;
@@ -43,7 +38,6 @@
   outputs =
     inputs@{
       nixpkgs,
-      nixpkgs-stable-2511,
       home-manager,
       darwin,
       nix-homebrew,
@@ -53,64 +47,19 @@
       username = "martin";
     in
     {
-      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt;
+      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
       darwinConfigurations = {
-        "mb-pro" = darwin.lib.darwinSystem rec {
-          system = "aarch64-darwin";
+        "mb-pro" = darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs username;
           };
           modules = [
             ./darwin/system/configuration.nix
+            ./darwin/system/overlays.nix
             nix-homebrew.darwinModules.nix-homebrew
-            {
-              nix-homebrew = {
-                enable = true;
-                enableRosetta = true;
-                user = username;
-                taps = {
-                  "homebrew/homebrew-bundle" = inputs.homebrew-bundle;
-                  "homebrew/homebrew-core" = inputs.homebrew-core;
-                  "homebrew/homebrew-cask" = inputs.homebrew-cask;
-                };
-                mutableTaps = false;
-              };
-            }
+            ./darwin/system/homebrew.nix
             home-manager.darwinModules.home-manager
-            ({ pkgs, ... }: {
-              nixpkgs.overlays = [
-                inputs.nur.overlays.default
-              ];
-              home-manager = {
-                extraSpecialArgs = {
-                  inherit inputs;
-                  # Newer oxker releases fail macOS snapshot tests: mrjackwills/oxker#73.
-                  oxker-package = nixpkgs-stable-2511.legacyPackages.${system}.oxker;
-                };
-
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users.${username} = {
-                  imports = [
-                    ./darwin/home/home.nix
-                    ./darwin/home/sketchybar/sketchybar.nix
-                  ];
-                };
-                backupCommand = "${
-                  pkgs.writeShellApplication {
-                    name = "home-manager-backup";
-                    runtimeInputs = [ pkgs.coreutils ];
-                    text = ''
-                      file=$1
-                      if [[ -e "$file.backup" || -L "$file.backup" ]]; then
-                        mv -fT -- "$file.backup" "$file.backup.2"
-                      fi
-                      mv -T -- "$file" "$file.backup"
-                    '';
-                  }
-                }/bin/home-manager-backup";
-              };
-            })
+            ./darwin/system/home-manager.nix
           ];
         };
       };

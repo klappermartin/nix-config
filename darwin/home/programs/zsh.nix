@@ -10,7 +10,7 @@
 
   home.sessionVariables = {
     TERMINAL = "kitty";
-    EDITOR = "zeditor";
+    EDITOR = "zeditor --wait";
     # use fake omz cache dir for completions
     ZSH_CACHE_DIR = "${config.home.homeDirectory}/.cache/oh-my-zsh";
   };

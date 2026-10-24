@@ -4,7 +4,7 @@
   home.file = {
     # Deploy the Lua config files
     ".config/sketchybar" = {
-      source = ./.;
+      source = ../sketchybar;
       recursive = true;
       onChange = "${pkgs.sketchybar}/bin/sketchybar --reload";
     };

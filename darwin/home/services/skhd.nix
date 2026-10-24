@@ -9,13 +9,26 @@ let
     action:
     lib.concatMapStringsSep "\n" (
       binding:
-      lib.concatMapStringsSep "\n" (
-        n:
-        "${binding} - ${n} : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[${n}] ]] && ${action} $SPACES[${n}]"
-      ) [ "1" "2" "3" "4" ]
+      lib.concatMapStringsSep "\n"
+        (
+          n:
+          "${binding} - ${n} : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[${n}] ]] && ${action} $SPACES[${n}]"
+        )
+        [
+          "1"
+          "2"
+          "3"
+          "4"
+        ]
     );
-  focusSpace = forEachSpace "yabai -m space --focus" [ "lalt" "ralt" ];
-  moveToSpace = forEachSpace "yabai -m window --space" [ "shift + lalt" "shift + ralt" ];
+  focusSpace = forEachSpace "yabai -m space --focus" [
+    "lalt"
+    "ralt"
+  ];
+  moveToSpace = forEachSpace "yabai -m window --space" [
+    "shift + lalt"
+    "shift + ralt"
+  ];
 in
 {
   services.skhd = {

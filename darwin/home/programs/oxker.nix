@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  oxker-package,
   ...
 }:
 let
@@ -11,12 +10,12 @@ let
       for arg in "$@"; do
         case "$arg" in
           --host|--host=*)
-            exec ${oxker-package}/bin/oxker "$@"
+            exec ${pkgs.oxker}/bin/oxker "$@"
             ;;
         esac
       done
 
-      exec ${oxker-package}/bin/oxker \
+      exec ${pkgs.oxker}/bin/oxker \
         --host "unix://${config.home.homeDirectory}/.colima/default/docker.sock" \
         "$@"
     '';

@@ -19,7 +19,7 @@
 
         # list stashes that were made on current branch
         # caveat: if current branch is substring of another branch, stashes from other branch are also matched
-        gstlcb = "!git stash list --grep='$(git rev-parse --abbrev-ref HEAD)'";
+        gstlcb = "!git stash list --grep=\"$(git rev-parse --abbrev-ref HEAD)\"";
 
         # display list of tags with information about ref, author, subject
         taglist = "!git for-each-ref --format='%(refname:short) %(objectname:short) %(authordate:short) %(contents:subject)' refs/tags";

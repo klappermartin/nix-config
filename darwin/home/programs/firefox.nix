@@ -35,19 +35,14 @@
           "browser.search.widget.inNavBar" = true;
 
           "browser.shell.checkDefaultBrowser" = false;
-          "browser.search.defaultenginename" = "Kagi Search";
-          "browser.search.order.1" = "Kagi Search";
           "browser.startup.homepage" = "https://kagi.com";
           "browser.tabs.loadInBackground" = true;
-          "browser.urlbar.placeholderName" = "Kagi";
           "browser.urlbar.showSearchSuggestionsFirst" = false;
 
           "browser.urlbar.quickactions.enabled" = false;
           "browser.urlbar.quickactions.showPrefs" = false;
           "browser.urlbar.shortcuts.quickactions" = true;
           "browser.urlbar.suggest.quickactions" = false;
-
-          "distribution.searchplugins.defaultLocale" = "en-US";
 
           # "doh-rollout.balrog-migration-done" = true; DNS over HTTPS
           # "doh-rollout.doneFirstRun" = true;
@@ -193,12 +188,12 @@
                   ];
                 }
               ];
-              icon = "''${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+              icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
               definedAliases = [ "@np" ];
             };
             "NixOS Wiki" = {
-              urls = [ { template = "https://nixos.wiki/index.php?search={searchTerms}"; } ];
-              icon = "https://nixos.wiki/favicon.png";
+              urls = [ { template = "https://wiki.nixos.org/w/index.php?search={searchTerms}"; } ];
+              icon = "https://wiki.nixos.org/favicon.ico";
               updateInterval = 24 * 60 * 60 * 1000;
               definedAliases = [ "@nw" ];
             };
@@ -214,7 +209,7 @@
               updateInterval = 24 * 60 * 60 * 1000;
               definedAliases = [ "@nh" ];
             };
-            "ddg".metaData.alis = "@d";
+            "ddg".metaData.alias = "@d";
             "bing".metaData.hidden = true;
             "google".metaData.alias = "@g";
           };

@@ -2,7 +2,6 @@
   imports = [
     ./packages.nix
     ./programs
-    ./programs/oxker.nix
     ./services
   ];
 

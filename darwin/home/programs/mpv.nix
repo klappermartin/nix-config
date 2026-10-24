@@ -22,21 +22,23 @@ let
 in
 {
   home.file =
-    if pkgs.stdenv.hostPlatform.isDarwin then {
-      # macOS: Firefox only scans this NativeMessagingHosts dir, NOT ~/.mozilla/.
-      "Library/Application Support/Mozilla/NativeMessagingHosts/ff2mpv.json".text =
-        builtins.toJSON {
+    if pkgs.stdenv.hostPlatform.isDarwin then
+      {
+        # macOS: Firefox only scans this NativeMessagingHosts dir, NOT ~/.mozilla/.
+        "Library/Application Support/Mozilla/NativeMessagingHosts/ff2mpv.json".text = builtins.toJSON {
           name = "ff2mpv";
           description = "ff2mpv's external manifest";
           path = "${ff2mpvLauncher}/bin/ff2mpv-launcher";
           type = "stdio";
           allowed_extensions = [ "ff2mpv@yossarian.net" ];
         };
-    } else {
-      # Linux: ~/.mozilla/native-messaging-hosts/ — what FF scans on Linux.
-      ".mozilla/native-messaging-hosts/ff2mpv.json".source =
-        "${pkgs.ff2mpv}/lib/mozilla/native-messaging-hosts/ff2mpv.json";
-    };
+      }
+    else
+      {
+        # Linux: ~/.mozilla/native-messaging-hosts/ — what FF scans on Linux.
+        ".mozilla/native-messaging-hosts/ff2mpv.json".source =
+          "${pkgs.ff2mpv}/lib/mozilla/native-messaging-hosts/ff2mpv.json";
+      };
 
   programs.mpv = {
     enable = true;

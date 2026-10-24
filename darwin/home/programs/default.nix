@@ -11,6 +11,7 @@
     ./mpv.nix
     ./opencode
     ./oss-references.nix
+    ./oxker.nix
     ./tmux.nix
     ./vscodium.nix
     ./zsh.nix

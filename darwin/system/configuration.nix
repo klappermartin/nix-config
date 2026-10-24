@@ -16,49 +16,7 @@
     systemPackages = with pkgs; [
       devenv
       # keepassxc
-      vim
     ];
-  };
-
-  homebrew = {
-    enable = true;
-    # use taps declared by nix-homebrew
-    taps = builtins.attrNames config.nix-homebrew.taps;
-    brews = [];
-    caskArgs = {
-      require_sha = true;
-    };
-    casks =
-      let
-        cask = name: {
-          inherit name;
-          greedy = true;
-        };
-        # casks that don't publish a sha256
-        unverifiedCask = name: cask name // { args.require_sha = false; };
-      in
-      map cask [
-        "balenaetcher"
-        "karabiner-elements"
-        "linear"
-        "slack"
-        "thunderbird"
-        "whatsapp"
-      ]
-      ++ map unverifiedCask [
-        "font-sf-mono"
-        "font-sf-pro"
-        "nvidia-geforce-now"
-        "spotify"
-      ];
-
-    masApps = { };
-    onActivation = {
-      autoUpdate = false;
-      cleanup = "zap";
-      # taps are pinned via flake.lock, so this only upgrades casks after `nix flake update`
-      upgrade = true;
-    };
   };
 
   nix.settings.experimental-features = "nix-command flakes";
@@ -72,8 +30,9 @@
     "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
   ];
 
-  nixpkgs.config = {
-    allowUnfree = true;
+  nixpkgs = {
+    hostPlatform = "aarch64-darwin";
+    config.allowUnfree = true;
   };
 
   nix.optimise.automatic = true;
@@ -175,15 +134,6 @@
   };
 
   system = {
-    activationScripts = {
-      postActivation.text = ''
-        # rosetta to run x86 on silicon (needed by nix-homebrew.enableRosetta)
-        if ! /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null; then
-          softwareupdate --install-rosetta --agree-to-license
-        fi
-      '';
-    };
-
     defaults = {
       ActivityMonitor.IconType = 5;
       controlcenter = {
@@ -194,14 +144,19 @@
         autohide = true;
         launchanim = false;
         largesize = 54;
-        persistent-apps = [
-          "/Applications/WhatsApp.app"
-          "/Applications/Slack.app"
-          "/Applications/Thunderbird.app"
-          # "${pkgs.firefox-devedition}/Applications/Firefox Developer Edition.app"
-          "${pkgs.kitty}/Applications/kitty.app"
-          "${pkgs.obsidian}/Applications/Obsidian.app"
-        ];
+        persistent-apps =
+          let
+            hm = config.home-manager.users.${username};
+            hmApp = name: "${hm.home.homeDirectory}/${hm.targets.darwin.copyApps.directory}/${name}.app";
+          in
+          map hmApp [
+            "WhatsApp"
+            "Slack"
+            "Thunderbird"
+            # "Firefox Developer Edition"
+            "kitty"
+            "Obsidian"
+          ];
         persistent-others = [ ];
 
         show-recents = false;
@@ -253,10 +208,5 @@
     stateVersion = 5;
   };
 
-  users.users = {
-    ${username} = {
-      name = username;
-      home = "/Users/${username}";
-    };
-  };
+  users.users.${username}.home = "/Users/${username}";
 }

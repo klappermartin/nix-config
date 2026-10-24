@@ -40,7 +40,7 @@ in
       enable = true;
       config = {
         ProgramArguments = [
-          "${config.home.profileDirectory}/bin/oss-ref"
+          (lib.getExe base.package)
           "prune"
           "--yes"
           "--min-age"
@@ -49,7 +49,6 @@ in
         EnvironmentVariables = {
           OSS_REFERENCES_ROOT = base.root;
           OSS_REFERENCES_CONSUMER_ROOTS = lib.concatStringsSep ":" base.consumerRoots;
-          PATH = "/usr/bin:/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin";
         };
         StartCalendarInterval = [
           {

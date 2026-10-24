@@ -1,6 +1,6 @@
 # nix-config
 
-nix-config for development machine (currently only aarch64-amd)
+nix-config for development machine (currently only aarch64-darwin / Apple Silicon)
 
 ## Features
 
@@ -31,8 +31,8 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 3. Clone the configuration
 
 ```bash
-git clone https://github.com/yourusername/nix-config.git
-cd nix-config
+git clone git@github.com:klappermartin/nix-config.git ~/nix
+cd ~/nix
 ```
 
 
@@ -41,7 +41,7 @@ cd nix-config
 1. Run darwin-rebuild for the first time
 
 ```bash
-sudo nix run github:LnL7/nix-darwin -- switch --flake .
+sudo nix run github:nix-darwin/nix-darwin/master#darwin-rebuild -- switch --flake .
 ```
 
 2. After the first switch, you can use:
@@ -53,8 +53,11 @@ sudo darwin-rebuild switch --flake .
 
 - `flake.nix` - Main entry point and input definitions
 - `darwin/system/configuration.nix` - System-wide macOS settings
+- `darwin/system/homebrew.nix` - Homebrew (nix-homebrew taps + casks) and Rosetta
+- `darwin/system/home-manager.nix` - home-manager wiring
+- `darwin/system/overlays.nix` - nixpkgs overlays (NUR, package pins)
 - `darwin/home/home.nix` - User-specific configurations
-- `darwin/home/sketchybar/` - Status bar configuration
+- `darwin/home/sketchybar/` - Status bar Lua configuration
 
 ## Included Software
 
@@ -76,6 +79,8 @@ config for this is very much taken from https://github.com/FelixKratz - amazing 
 
 ### Homebrew Applications
 - whatever is not available on nixpkgs for darwin (or has macOS such as screen share permissions)
+- cleanup is `zap`, which deletes app data of casks removed from the list, so apps
+  with local state worth keeping (chat history, mail) are installed from nixpkgs
 
 ## Utilities
 

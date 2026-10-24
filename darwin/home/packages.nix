@@ -48,9 +48,12 @@
     ripgrep
     raycast
     shellcheck
+    slack
     speedtest-cli
     telegram-desktop
+    thunderbird
     ttyper
+    whatsapp-for-mac
     zed-editor
   ];
 }

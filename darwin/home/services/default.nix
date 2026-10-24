@@ -6,6 +6,7 @@
   imports = [
     ./jankyborders.nix
     ./oss-references-pruner.nix
+    ./sketchybar.nix
     ./skhd.nix
   ];
 
@@ -15,7 +16,7 @@
       enableZshIntegration = true;
       defaultCacheTtl = 21600; # 6 hours
       maxCacheTtl = 86400; # 1 day
-      pinentry.package = pkgs.pinentry-tty;
+      pinentry.package = pkgs.pinentry_mac;
     };
 
     oss-references-pruner = {

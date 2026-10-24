@@ -19,6 +19,12 @@ in
 {
   options.programs.oss-references = {
     enable = lib.mkEnableOption "OSS references workflow (oss-ref script + guaranteed root dir + session env var)";
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = ossRef;
+      defaultText = lib.literalExpression "oss-ref built from ./oss-ref.sh";
+      description = "The oss-ref package.";
+    };
     root = lib.mkOption {
       type = lib.types.str;
       default = "${config.home.homeDirectory}/code/others/oss-references";
@@ -32,7 +38,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ ossRef ];
+    home.packages = [ cfg.package ];
     home.sessionVariables = {
       OSS_REFERENCES_ROOT = cfg.root;
       OSS_REFERENCES_CONSUMER_ROOTS = lib.concatStringsSep ":" cfg.consumerRoots;

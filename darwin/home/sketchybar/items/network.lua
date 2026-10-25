@@ -19,7 +19,7 @@ end
 local network = sbar.add("item", "network", {
   position = "right",
   width = 120,
-  update_freq = 2,
+  update_freq = 1,
   icon = { drawing = false },
   label = {
     font = {

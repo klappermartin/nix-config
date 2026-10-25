@@ -5,22 +5,12 @@
   ...
 }:
 let
-  jsonFormat = pkgs.formats.json { };
-
-  # 1.x loads only in OpenCode V1 and 2.x (npm `next` tag) only in V2. Anthropic
+  # The 2.x auth plugin targets OpenCode V2. Anthropic
   # gates models on the Claude Code version this plugin reports; on 400
   # `claude_code_version_too_old`, bump it or set `ANTHROPIC_CLAUDE_CODE_VERSION`.
-  anthropicAuthPluginV1 = "@ex-machina/opencode-anthropic-auth@1.8.6";
   anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
-  omoPluginVersion = "4.19.4";
-  omoPlugin = "oh-my-openagent@${omoPluginVersion}";
   opencodeV2Version = "2.0.24";
   codegraphVersion = "1.6.2";
-
-  omoSrc = pkgs.fetchzip {
-    url = "https://registry.npmjs.org/oh-my-openagent/-/oh-my-openagent-${omoPluginVersion}.tgz";
-    hash = "sha256-UVs08W8azRuGgj58WCuctrn2ASnQyFG473/ecIeHIxY=";
-  };
 
   # The main npm package is only a launcher; the runnable bundle ships per platform.
   codegraphBundle = pkgs.fetchzip {
@@ -46,8 +36,7 @@ let
     text = ''exec ${codegraphPatchedBundle}/bin/codegraph "$@"'';
   };
 
-  # nixpkgs only packages OpenCode V1, which omo needs; V2 ships signed
-  # per-platform binaries on npm.
+  # V2 ships signed per-platform binaries on npm; the pinned nixpkgs has V1.
   opencodeV2Bundle = pkgs.fetchzip {
     url = "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-${opencodeV2Version}.tgz";
     hash = "sha256-NiD8JtQjJkI1D/U40M2TbfjCw6aifz3JBov/xu7UsXU=";
@@ -60,49 +49,22 @@ let
     runtimeInputs = [ pkgs.ripgrep ];
     runtimeEnv = {
       OPENCODE_DISABLE_AUTOUPDATE = "1";
-      # Keeps V2 from migrating V1's `opencode.db` in place. See README.md.
+      # Preserve the existing V2 session/auth database across the profile cleanup.
       OPENCODE_DB = "opencode-v2.db";
     };
     text = ''exec ${opencodeV2Bundle}/bin/opencode "$@"'';
   };
 
-  switcher = pkgs.writeShellApplication {
-    name = "activate-oh-my-openagent-profile.sh";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = builtins.readFile ./activate-oh-my-openagent-profile.sh;
-  };
-
-  omoDirectory = "${config.home.homeDirectory}/.omo";
   opencodeConfigDirectory = "${config.xdg.configHome}/opencode";
-  omoServerConfigPath = "${opencodeConfigDirectory}/omo.json";
-  omoTuiConfigPath = "${opencodeConfigDirectory}/omo-tui.json";
-
-  # Extra configs can only add plugins, not remove them, so `opencode.json`
-  # stays lite and `opencode-omo` adds omo via these files. V1 skips the V2
-  # `plugins` key in `opencode.json`, so its auth plugin comes from here too.
-  # See README.md.
-  omoServerConfig = jsonFormat.generate "opencode-omo.json" {
-    "$schema" = "https://opencode.ai/config.json";
-    plugin = [
-      anthropicAuthPluginV1
-      omoPlugin
-    ];
-  };
-
-  omoTuiConfig = jsonFormat.generate "opencode-omo-tui.json" {
-    "$schema" = "https://opencode.ai/tui.json";
-    plugin = [ omoPlugin ];
-  };
-
-  opencodeOmo = pkgs.writeShellApplication {
-    name = "opencode-omo";
+  lspTools = pkgs.writeShellApplication {
+    name = "lsp-tools-mcp";
+    runtimeEnv = {
+      LSP_TOOLS_MCP_USER_CONFIG = "${opencodeConfigDirectory}/lsp.json";
+      LSP_TOOLS_MCP_INSTALL_DECISIONS = "${opencodeConfigDirectory}/lsp-install-decisions.json";
+      LSP_TOOLS_MCP_PROJECT_CONFIG = ".opencode/lsp.json";
+    };
     text = ''
-      export OPENCODE_CONFIG=${lib.escapeShellArg omoServerConfigPath}
-      export OPENCODE_TUI_CONFIG=${lib.escapeShellArg omoTuiConfigPath}
-      # OMO uses this binary for opted-in projects instead of provisioning its own.
-      export OMO_CODEGRAPH_BIN=${lib.escapeShellArg (lib.getExe codegraph)}
-      # omo is a V1 plugin and V1 plugins do not run in V2.
-      exec ${lib.escapeShellArg "${pkgs.opencode}/bin/opencode"} "$@"
+      exec ${pkgs.nodejs_22}/bin/node ${./vendor/lsp-tools-mcp/cli.mjs} "$@"
     '';
   };
 in
@@ -111,7 +73,6 @@ in
     enable = true;
     package = opencodeV2;
     settings = {
-      # V2 key, skipped by V1. No omo here; `opencode-omo` adds it.
       plugins = [ anthropicAuthPluginV2 ];
       mcp = {
         codegraph = {
@@ -137,15 +98,7 @@ in
         };
         lsp = {
           type = "local";
-          command = [
-            "${pkgs.nodejs_22}/bin/node"
-            "${omoSrc}/packages/lsp-tools-mcp/dist/cli.js"
-          ];
-          environment = {
-            LSP_TOOLS_MCP_USER_CONFIG = "${opencodeConfigDirectory}/lsp.json";
-            LSP_TOOLS_MCP_INSTALL_DECISIONS = "${opencodeConfigDirectory}/lsp-install-decisions.json";
-            LSP_TOOLS_MCP_PROJECT_CONFIG = ".opencode/lsp.json:.omo/lsp.json:.omo/lsp-client.json";
-          };
+          command = [ (lib.getExe lspTools) ];
         };
         figma = {
           type = "remote";
@@ -159,37 +112,35 @@ in
     };
     agents.librarian = ./agents/librarian.md;
     skills = {
-      ast-grep = "${omoSrc}/packages/shared-skills/skills/ast-grep";
-      git-master = "${omoSrc}/packages/shared-skills/skills/git-master";
-      lsp-setup = "${omoSrc}/packages/shared-skills/skills/lsp-setup";
+      ast-grep = ./vendor/skills/ast-grep;
+      git-master = ./vendor/skills/git-master;
+      lsp-setup = ./vendor/skills/lsp-setup;
       playwright = ./skills/playwright;
-      visual-qa = "${omoSrc}/packages/shared-skills/skills/visual-qa";
+      visual-qa = ./vendor/skills/visual-qa;
     };
-    # Keeps tui.json managed, overwriting omo's earlier self-heal edits.
-    tui.plugin = [ ];
   };
 
   home.packages = [
-    switcher
-    opencodeOmo
     codegraph
+    lspTools
   ];
-  home.file = {
-    ".omo/omo.anthropic.jsonc".source = ./omo.anthropic.jsonc;
-    ".omo/omo.openai.jsonc".source = ./omo.openai.jsonc;
-    ".omo/omo.opencode-go.jsonc".source = ./omo.opencode-go.jsonc;
-  };
-  xdg.configFile = {
-    "opencode/activate-oh-my-openagent-profile.sh".source =
-      "${switcher}/bin/activate-oh-my-openagent-profile.sh";
-    "opencode/omo.json".source = omoServerConfig;
-    "opencode/omo-tui.json".source = omoTuiConfig;
-  };
 
-  # The switcher owns the active file; rebuilds must preserve the selected profile.
-  home.activation.initializeOmoProfile = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    if [[ ! -e ${lib.escapeShellArg "${omoDirectory}/omo.jsonc"} && ! -L ${lib.escapeShellArg "${omoDirectory}/omo.jsonc"} ]]; then
-      run ${pkgs.coreutils}/bin/ln -s omo.anthropic.jsonc ${lib.escapeShellArg "${omoDirectory}/omo.jsonc"}
-    fi
-  '';
+  # HM removes the old managed profiles. Retire the mutable selection created by
+  # the former switcher separately, preserving it rather than deleting user data.
+  home.activation.retireOmoProfile =
+    lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]
+      ''
+        active=${lib.escapeShellArg "${config.home.homeDirectory}/.omo/omo.jsonc"}
+        retired=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/retired-config"}
+        if [[ -f "$active" || -L "$active" ]]; then
+          run mkdir -p "$retired"
+          if [[ -L "$active" && -f "$active" ]]; then
+            # Save the selected contents before HM removes the old profile targets.
+            run ${pkgs.coreutils}/bin/cp -L --backup=numbered -T -- "$active" "$retired/omo.jsonc"
+            run rm -- "$active"
+          else
+            run ${pkgs.coreutils}/bin/mv --backup=numbered -T -- "$active" "$retired/omo.jsonc"
+          fi
+        fi
+      '';
 }

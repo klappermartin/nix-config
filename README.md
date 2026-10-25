@@ -34,8 +34,6 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 git clone git@github.com:klappermartin/nix-config.git ~/nix
 cd ~/nix
 ```
-
-
 ### Initial Setup
 
 1. Run the darwin-rebuild supplied by this repository's locked Darwin input:
@@ -68,8 +66,8 @@ home-manager.users.martin.workstation.desktop = {
 };
 ```
 
-Install Xcode/Command Line Tools as needed; the full Xcode bundle is currently a
-manual prerequisite. Grant Accessibility permissions to yabai/skhd and App
+Install Command Line Tools for development; install full Xcode separately for
+projects that require it. Grant Accessibility permissions to yabai/skhd and App
 Management permissions when macOS requests them. Set up SSH/signing keys and
 application logins separately; private keys and credentials are not in this repo.
 Git signing currently expects `~/.ssh/id_ed25519.pub`; if using a new key, register
@@ -91,12 +89,14 @@ separate platform/OS composition, not an M-series chip-name conditional.
 - `darwin/home/home.nix` - User-specific configurations
 - `darwin/home/desktop.nix` - Host-overridable desktop settings
 - `darwin/home/sketchybar/` - Status bar Lua configuration
+- `darwin/home/programs/opencode/` - OpenCode packages and global configuration
+- `.opencode/opencode.json` - NixOS MCP connection for this repository
 
 ## Maintenance
 
 ```sh
-make check                   # evaluate both hosts without building or activating
-make build HOST=mb-pro       # build this host without activating it
+nix flake check --no-build --no-write-lock-file
+nix build --no-write-lock-file .#darwinConfigurations.mb-pro.system
 sudo darwin-rebuild switch --flake .#mb-pro
 ```
 
@@ -109,7 +109,7 @@ nix eval --offline --no-write-lock-file \
 ```
 
 Update inputs deliberately with `nix flake update`, review `flake.lock`, then run
-the checks and build before switching. `make check` does not build the complete
+the checks and build before switching. `nix flake check --no-build` does not build the complete
 system. A build does not activate it or validate live permissions, hotkeys, or
 application behavior. After a switch, check the managed skhd agent and exercise
 window/space bindings and the status bar:
@@ -118,10 +118,9 @@ window/space bindings and the status bar:
 launchctl print "gui/$(id -u)/org.nix-community.home.skhd"
 ```
 
-The next activation retires a legacy `com.koekeishiya.skhd` registration before
-starting the managed agent. Its plist is preserved under
-`~/.local/state/home-manager/retired-launchagents/`. Do not run skhd's separate
-service installer; Home Manager owns that service.
+Home Manager owns skhd. Activation retires any legacy `com.koekeishiya.skhd`
+registration and preserves its plist under
+`~/.local/state/home-manager/retired-launchagents/`.
 
 Keep a known-good Git revision/lock for recovery. To return to it, build and switch
 that revision with the explicit host selector. Existing system generations are
@@ -133,20 +132,19 @@ substitute for the non-activating evaluation/build commands above.
 ## Included Software
 
 ### Core Tools
-- Firefox (with extension and configuration)
+- Firefox Developer Edition (with extensions and configuration)
 - VSCodium (with extensions)
 - Kitty terminal
 - Tmux
 - Git setup
-
-
+- OpenCode V2 — see [configuration and project MCP setup](darwin/home/programs/opencode/README.md)
 ### Window Management
 - Yabai for tiling window management
 - Skhd for keyboard shortcuts
 - JankyBorders for window borders
 - Sketchybar for a customizable status bar
 
-config for this is very much taken from https://github.com/FelixKratz - amazing repos!
+Window-management configuration draws from [FelixKratz's dotfiles](https://github.com/FelixKratz).
 
 ### Homebrew Applications
 - Prefer nixpkgs; Homebrew handles macOS availability/packaging exceptions.
@@ -181,18 +179,14 @@ deletion can be enabled with `services.oss-references-pruner.dryRun = false`.
 2. **Development Setup**
    - [ ] Move dev-related packages into a dedicated module
 
-3. **Sketchybar Configuration**
-   - [ ] Fetch/copy examples from sketchybar config
-   - [ ] Complete sketchybar implementation
-
-4. **Extensions & Settings**
+3. **Extensions & Settings**
    - [ ] Persist extension configurations separately
    - [ ] Configure browser extension settings
 
-5. **Shell Configuration**
+4. **Shell Configuration**
    - [ ] Research / Set up aliases for Kagi search lenses
 
-6. **General**
+5. **General**
     - [ ] Add a separate OS composition if a NixOS host is introduced
 
 ## Usage Notes

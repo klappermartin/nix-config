@@ -30,6 +30,6 @@ rather than plugin-specific agents or missing monorepo capture scripts.
 
 For updates, review the standalone upstream or a new utility snapshot, retain
 licenses, and update this provenance record. Do not reintroduce a plugin installer
-or a runtime fetch. Run `make check`, build the Darwin system, and smoke-test MCP
+or a runtime fetch. Run `nix flake check --no-build`, build the Darwin system, and smoke-test MCP
 initialization, tool listing, and diagnostics before switching. Treat generated
 `cli.mjs` as a snapshot rather than hand-editing bundled code.

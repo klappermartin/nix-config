@@ -11,6 +11,28 @@ let
   anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
   opencodeV2Version = "2.0.24";
   codegraphVersion = "1.6.2";
+  effectMcpVersion = "0.1.16";
+
+  # Published Effect MCP is a self-contained Node bundle (no npm install needed).
+  effectMcpBundle = pkgs.fetchzip {
+    url = "https://registry.npmjs.org/effect-mcp/-/effect-mcp-${effectMcpVersion}.tgz";
+    hash = "sha256-BNK90JKs7e/NQyv3/9jghUKMF7JV0ntCezDqBA3Iw5c=";
+  };
+  effectMcp = pkgs.writeShellApplication {
+    name = "effect-mcp";
+    text = ''exec ${pkgs.nodejs_22}/bin/node ${effectMcpBundle}/main.cjs "$@"'';
+  };
+
+  # Projects opt in by command name; keep the Darwin app path and version-specific
+  # flags here so every project uses the same configured browser.
+  firefoxMcp = pkgs.writeShellApplication {
+    name = "firefox-devtools-mcp";
+    text = ''
+      exec ${lib.getExe pkgs.firefox-devtools-mcp} \
+        --firefox-path ${lib.escapeShellArg "${config.programs.firefox.package}/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox-devedition"} \
+        --enable-script --start-url about:blank "$@"
+    '';
+  };
 
   # The main npm package is only a launcher; the runnable bundle ships per platform.
   codegraphBundle = pkgs.fetchzip {
@@ -46,7 +68,13 @@ let
   # copy, and no self-update. The background service inherits this environment.
   opencodeV2 = pkgs.writeShellApplication {
     name = "opencode";
-    runtimeInputs = [ pkgs.ripgrep ];
+    # Available to project MCP definitions without enabling those servers globally.
+    runtimeInputs = [
+      pkgs.ripgrep
+      pkgs.mcp-nixos
+      effectMcp
+      firefoxMcp
+    ];
     runtimeEnv = {
       OPENCODE_DISABLE_AUTOUPDATE = "1";
       # Preserve the existing V2 session/auth database across the profile cleanup.
@@ -58,6 +86,8 @@ let
   opencodeConfigDirectory = "${config.xdg.configHome}/opencode";
   lspTools = pkgs.writeShellApplication {
     name = "lsp-tools-mcp";
+    # Nixpkgs supplies a fallback tsserver; workspace TypeScript takes precedence.
+    runtimeInputs = [ pkgs.typescript-language-server ];
     runtimeEnv = {
       LSP_TOOLS_MCP_USER_CONFIG = "${opencodeConfigDirectory}/lsp.json";
       LSP_TOOLS_MCP_INSTALL_DECISIONS = "${opencodeConfigDirectory}/lsp-install-decisions.json";
@@ -74,7 +104,7 @@ in
     package = opencodeV2;
     settings = {
       plugins = [ anthropicAuthPluginV2 ];
-      mcp = {
+      mcp.servers = {
         codegraph = {
           type = "local";
           command = [
@@ -92,6 +122,10 @@ in
           url = "https://mcp.linear.app/mcp";
           oauth = { };
         };
+        figma = {
+          type = "remote";
+          url = "http://127.0.0.1:3845/mcp";
+        };
         grep_app = {
           type = "remote";
           url = "https://mcp.grep.app";
@@ -99,10 +133,6 @@ in
         lsp = {
           type = "local";
           command = [ (lib.getExe lspTools) ];
-        };
-        figma = {
-          type = "remote";
-          url = "http://127.0.0.1:3845/mcp";
         };
         websearch = {
           type = "remote";
@@ -123,6 +153,10 @@ in
   home.packages = [
     codegraph
     lspTools
+    effectMcp
+    pkgs.mcp-nixos
+    firefoxMcp
+    pkgs.typescript-language-server
   ];
 
   # HM removes the old managed profiles. Retire the mutable selection created by

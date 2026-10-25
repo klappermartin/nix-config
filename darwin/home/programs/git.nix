@@ -4,6 +4,15 @@
   ...
 }:
 let
+  gitHelper =
+    name: source:
+    pkgs.writeShellApplication {
+      inherit name;
+      runtimeInputs = [ pkgs.git ];
+      text = builtins.readFile source;
+    };
+  defaultBranch = gitHelper "git-default-branch" ./git-default-branch.sh;
+  sweep = gitHelper "git-sweep" ./git-sweep.sh;
   email = "64156820+klappermartin@users.noreply.github.com";
   sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIESQFjRlkApLrMLCnGRedOl12/Zvf5V5wZsUJQoRNaZ9";
 in
@@ -38,11 +47,11 @@ in
         # Set remotes/origin/HEAD -> defaultBranch (copied from https://stackoverflow.com/a/67672350/14870317)
         remoteSetHead = "remote set-head origin --auto";
 
-        # Get default branch name (copied from https://stackoverflow.com/a/67672350/14870317)
-        defaultBranch = "!git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4";
+        # Preserve branch names containing slashes and fail if origin/HEAD is unset.
+        defaultBranch = "!${defaultBranch}/bin/git-default-branch";
 
-        # Clean merged branches (adapted from https://stackoverflow.com/a/6127884/14870317)
-        sweep = "!git branch --merged $(git defaultBranch) | grep -E -v ' $(git defaultBranch)$' | xargs -r git branch -d && git remote prune origin";
+        # Preserve the default branch and every checked-out worktree branch.
+        sweep = "!${sweep}/bin/git-sweep";
 
         # http://www.jukie.net/bart/blog/pimping-out-git-log
         lg = "log --graph --all --pretty=format:'%Cred%h%Creset - %s %Cgreen(%cr) %C(bold blue)%an%Creset %C(yellow)%d%Creset'";
@@ -52,7 +61,7 @@ in
         serve = "!git daemon --reuseaddr --verbose  --base-path=. --export-all ./.git";
 
         # Checkout to defaultBranch
-        m = "!git checkout $(git defaultBranch)";
+        m = ''!f() { branch=$(git defaultBranch) || return; git checkout "$branch"; }; f'';
 
         # Removes a file from the index
         unstage = "reset HEAD --";

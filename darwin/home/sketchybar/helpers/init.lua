@@ -1,4 +1,4 @@
--- Add the sketchybar module to the package cpath
-package.cpath = package.cpath .. ";/Users/" .. os.getenv("USER") .. "/.local/share/sketchybar_lua/?.so"
-
--- Helpers are pre-compiled by Nix, no runtime compilation needed
+-- The generated entry point supplies the exact, precompiled Nix module path.
+return function(module_path)
+  package.cpath = package.cpath .. ";" .. module_path
+end

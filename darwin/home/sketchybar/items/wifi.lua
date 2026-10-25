@@ -19,7 +19,7 @@ local wifi = sbar.add("item", "wifi", {
 })
 
 local function update_wifi()
-  sbar.exec("ipconfig getsummary en0 2>/dev/null", function(result)
+  sbar.exec("/usr/sbin/ipconfig getsummary " .. settings.network_interface .. " 2>/dev/null", function(result)
     if not result or result == "" then
       wifi:set({ icon = { string = icons.wifi.off, color = colors.grey } })
       return

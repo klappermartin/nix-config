@@ -1,5 +1,10 @@
 # taken from gvolpe: https://github.com/gvolpe/nix-config/blob/cac3d57ee34bc1cfd368f7848717c5c17071c8d6/home/programs/mpv/default.nix
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # ff2mpv firefox extension native client — wiring differs by platform, see
@@ -14,9 +19,9 @@ let
   #
   # On macOS, GUI applications inherit PATH from launchd (no Nix profile dirs),
   # so the upstream ff2mpv.py can't find `mpv` on its own. The wrapper below
-  # prepends the per-user Nix profile dir before exec'ing the upstream script.
+  # supplies the configured mpv package before exec'ing the upstream script.
   ff2mpvLauncher = pkgs.writeShellScriptBin "ff2mpv-launcher" ''
-    export PATH="/etc/profiles/per-user/$(id -un)/bin:$PATH"
+    export PATH="${lib.makeBinPath [ config.programs.mpv.package ]}:$PATH"
     exec "${pkgs.ff2mpv}/bin/ff2mpv.py" "$@"
   '';
 in

@@ -3,8 +3,49 @@ set -euo pipefail
 IFS=$'\n\t'
 
 readonly ROOT="${OSS_REFERENCES_ROOT:-$HOME/code/others/oss-references}"
-# shellcheck disable=SC2034
 readonly CONSUMER_ROOTS="${OSS_REFERENCES_CONSUMER_ROOTS:-$HOME/code}"
+
+# Operations share a lock so add cannot publish a clone while prune scans.
+# A lock left by SIGKILL must be inspected and removed manually, never timed out.
+begin_operation() {
+  mkdir -p "$ROOT"
+  root=$(realpath -e -- "$ROOT")
+  lock_dir="$root/.lock"
+  if ! mkdir "$lock_dir" 2>/dev/null; then
+    log_err "another operation is running (or left a stale lock): $lock_dir"
+    return 1
+  fi
+  workdir=""
+  trap '[[ -z "$workdir" ]] || rm -rf -- "$workdir"; rm -f -- "$lock_dir/pid"; rmdir -- "$lock_dir"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  printf '%s\n' "$$" > "$lock_dir/pid"
+  mkdir -p "$root/.partial"
+  workdir=$(mktemp -d "$root/.partial/operation.XXXXXX")
+}
+
+consumer_roots() {
+  local consumer canonical
+  roots=()
+  # read avoids pathname expansion and preserves spaces in root names.
+  if [[ "$CONSUMER_ROOTS" == :* || "$CONSUMER_ROOTS" == *: || "$CONSUMER_ROOTS" == *::* ]]; then
+    log_err "consumer roots must not contain empty entries"
+    return 1
+  fi
+  IFS=: read -r -a roots <<< "$CONSUMER_ROOTS"
+  [[ ${#roots[@]} -gt 0 ]] || { log_err "no consumer roots configured"; return 1; }
+  for consumer in "${roots[@]}"; do
+    [[ -d "$consumer" && -r "$consumer" && -x "$consumer" ]] || {
+      log_err "consumer root is missing or unreadable: $consumer"
+      return 1
+    }
+    canonical=$(realpath -e -- "$consumer") || return 1
+    [[ "$canonical" != "$root" && "$canonical" != "$root/"* ]] || {
+      log_err "consumer roots must be outside the references store: $consumer"
+      return 1
+    }
+  done
+}
 
 sanitize_version() {
   echo "$1" | tr '/' '-' | tr -cs 'A-Za-z0-9._+-' '-' | sed -E 's/-+/-/g; s/^-|-$//g'
@@ -89,68 +130,86 @@ cmd_list() {
   find "$ROOT" -mindepth 1 -maxdepth 1 -type d -name '*@*' -exec basename {} \; 2>/dev/null | sort
 }
 
-cmd_add() {
+cmd_add() (
   [[ $# -eq 3 ]] || { log_err "usage: oss-ref add <git-url> <version> <symlink-path>"; exit 2; }
   local url="$1" version="$2" symlink_path="$3"
 
-  mkdir -p "$ROOT"
+  local root lock_dir workdir
+  begin_operation
+  local -a roots
+  consumer_roots
 
-  # Clean stale partials older than 60 minutes
-  if [[ -d "$ROOT/.partial" ]]; then
-    find "$ROOT/.partial" -mindepth 1 -maxdepth 1 -type d -mmin +60 -exec rm -rf {} + 2>/dev/null || true
+  # Resolve the parent, not the final symlink (which may already point at a clone).
+  local parent destination consumer canonical in_scope=0
+  parent=$(realpath -m -- "$(dirname -- "$symlink_path")")
+  destination="$parent/$(basename -- "$symlink_path")"
+  for consumer in "${roots[@]}"; do
+    canonical=$(realpath -e -- "$consumer")
+    if [[ "$parent" == "$canonical" || "$parent" == "$canonical/"* ]]; then
+      # find does not descend through intermediate directory symlinks. Require
+      # the lexical path inside this root to match the resolved path as well.
+      local lexical
+      lexical=$(realpath -ms -- "$symlink_path")
+      if [[ "$lexical" == "$destination" ]]; then in_scope=1; fi
+    fi
+  done
+  if [[ $in_scope -eq 0 || "$destination" == "$root" || "$destination" == "$root/"* ]]; then
+    log_err "consumer must be a discoverable path under a configured consumer root: $symlink_path"
+    exit 1
+  fi
+  if [[ -e "$destination" && ! -L "$destination" ]]; then
+    log_err "refusing to replace a real file or directory: $destination"
+    exit 1
   fi
 
   local slug version_safe target
   slug=$(derive_slug "$url")
   version_safe=$(sanitize_version "$version")
-  target="$ROOT/$slug@$version_safe"
+  [[ -n "$slug" && -n "$version_safe" && "$version" != -* ]] || {
+    log_err "invalid repository slug or version"; exit 2;
+  }
+  target="$root/$slug@$version_safe"
 
-  # Collision check
-  if [[ -e "$target" ]]; then
-    log_err "already exists: $target"
-    exit 1
-  fi
-
-  mkdir -p "$ROOT/.partial"
-  local staging="$ROOT/.partial/$slug@$version_safe.$$" diagnostics
-  diagnostics=$(mktemp "${TMPDIR:-/tmp}/oss-clone.XXXXXX")
-  chmod 600 "$diagnostics"
-
-  # Trap: remove diagnostics and staging on any exit
-  trap 'rm -f "$diagnostics"; rm -rf "$staging"; rmdir "$ROOT/.partial" 2>/dev/null || true' EXIT INT TERM
-
-  # Try shallow clone by branch/tag first
-  if ! git clone --depth=1 --branch "$version" "$url" "$staging" 2>"$diagnostics"; then
-    # Check if it's a ref-not-found error; if so try full clone + checkout (SHA fallback)
-    if grep -qiE 'Remote branch .* not found|no such ref|Could not find remote branch|warning: Could not find remote branch' "$diagnostics" 2>/dev/null || \
-       grep -qiE 'fatal: .*(not found|invalid)' "$diagnostics" 2>/dev/null; then
-      rm -rf "$staging"
-      git clone --filter=blob:none "$url" "$staging" 2>"$diagnostics" || exit 1
-      git -C "$staging" checkout "$version" 2>"$diagnostics" || exit 1
-    else
+  if [[ -e "$target" || -L "$target" ]]; then
+    local origin expected actual recorded_version
+    origin=$(git -C "$target" config --get remote.origin.url) || exit 1
+    expected=$(git -C "$target" rev-parse --verify "$version^{commit}") || exit 1
+    actual=$(git -C "$target" rev-parse HEAD) || exit 1
+    recorded_version=$(git -C "$target" config --get oss-ref.version || true)
+    if [[ -L "$target" || "$origin" != "$url" || "$expected" != "$actual" ||
+          ( -n "$recorded_version" && "$recorded_version" != "$version" ) ]]; then
+      log_err "existing clone does not match requested repository/version: $target"
       exit 1
     fi
+    echo "Reusing: $target"
+  else
+    local staging="$workdir/clone" diagnostics="$workdir/clone.log"
+    if ! git clone --depth=1 --branch "$version" -- "$url" "$staging" 2>"$diagnostics"; then
+      if grep -qiE 'Remote branch .* not found|no such ref|Could not find remote branch' "$diagnostics"; then
+        rm -rf -- "$staging"
+        if ! git clone --filter=blob:none -- "$url" "$staging" 2>>"$diagnostics" ||
+           ! git -C "$staging" checkout --detach "$version" 2>>"$diagnostics"; then
+          cat "$diagnostics" >&2
+          exit 1
+        fi
+      else
+        cat "$diagnostics" >&2
+        exit 1
+      fi
+    fi
+    git -C "$staging" config oss-ref.version "$version"
+    mv -T -- "$staging" "$target"
+    echo "Created: $target"
   fi
 
-  # Atomic swap
-  mv "$staging" "$target"
-  rm -f "$diagnostics"
-  trap - EXIT INT TERM
-
-  # Symlink: parent auto-mkdir, -n prevents following existing symlink
-  mkdir -p "$(dirname "$symlink_path")"
-  ln -sfn "$target" "$symlink_path"
-  rmdir "$ROOT/.partial" 2>/dev/null || true
-
-  echo "Created: $target"
-  echo "Symlink: $symlink_path -> $target"
-
-  if confirm "Run 'oss-ref prune' to check for orphans now?" 1; then
-    cmd_prune
+  if ! mkdir -p -- "$parent" || ! ln -sfnT -- "$target" "$destination"; then
+    log_err "clone retained at $target; fix the consumer path and retry add"
+    exit 1
   fi
-}
+  echo "Symlink: $destination -> $target"
+)
 
-cmd_prune() {
+cmd_prune() (
   local assume_yes=0 dry_run=0 min_age_min=0 verbose=0
 
   while [[ $# -gt 0 ]]; do
@@ -165,9 +224,9 @@ cmd_prune() {
           exit 2
         fi
         case "$age_arg" in
-          *d) min_age_min=$(( ${age_arg%d} * 1440 )) ;;
-          *h) min_age_min=$(( ${age_arg%h} * 60 )) ;;
-          *m) min_age_min=${age_arg%m} ;;
+          *d) min_age_min=$(( 10#${age_arg%d} * 1440 )) ;;
+          *h) min_age_min=$(( 10#${age_arg%h} * 60 )) ;;
+          *m) min_age_min=$(( 10#${age_arg%m} )) ;;
         esac
         ;;
       -v)         verbose=1; shift ;;
@@ -181,9 +240,13 @@ cmd_prune() {
     exit 0
   fi
 
-  # Enumerate versioned clone candidates
-  local -a candidates
-  mapfile -t candidates < <(find "$ROOT" -mindepth 1 -maxdepth 1 -type d -name '*@*' 2>/dev/null)
+  local root lock_dir workdir
+  begin_operation
+  local -a candidates=() roots=() eligible=()
+  consumer_roots
+  # Check find's status before consuming its output: process substitution hides errors.
+  find "$root" -mindepth 1 -maxdepth 1 -type d -name '*@*' -print0 > "$workdir/candidates"
+  mapfile -d '' -t candidates < "$workdir/candidates"
 
   # Non-tty guard: refuse interactive prompt on non-tty stdin
   if [[ $dry_run -eq 0 && $assume_yes -eq 0 && ! -t 0 ]]; then
@@ -191,22 +254,38 @@ cmd_prune() {
     exit 2
   fi
 
-  # Collect referenced targets by scanning consumer roots
-  local -A referenced
-  local IFS_ORIG="$IFS"
-  IFS=':'
-  # shellcheck disable=SC2206
-  local -a roots=($CONSUMER_ROOTS)
-  IFS="$IFS_ORIG"
-
+  # A failed or incomplete scan must never be interpreted as absence of consumers.
+  local -A referenced=()
+  local consumer_root canonical link resolved relative clone unresolved
   for consumer_root in "${roots[@]}"; do
     log_info "Scanning: $consumer_root"
-    if [[ -d "$consumer_root" ]]; then
-      local resolved
-      while IFS= read -r -d '' resolved; do
-        referenced["$resolved"]=1
-      done < <(find "$consumer_root" -type l -exec readlink -fz -- {} + 2>/dev/null)
+    canonical=$(realpath -e -- "$consumer_root")
+    if ! find "$canonical" -path "$root" -prune -o -type l -print0 > "$workdir/links"; then
+      log_err "incomplete consumer scan; refusing to prune: $consumer_root"
+      exit 1
     fi
+    while IFS= read -r -d '' link; do
+      # -m retains broken descendant links as references too; loops/errors abort.
+      resolved=$(realpath -m -- "$link") || {
+        log_err "cannot resolve consumer link; refusing to prune: $link"; exit 1;
+      }
+      # GNU realpath -m can return success for a loop, treating its unresolved
+      # components as missing. Any symlink left in the result means resolution
+      # was incomplete (including loops in an intermediate path component).
+      unresolved=$resolved
+      while [[ -n "$unresolved" && "$unresolved" != / ]]; do
+        if [[ -L "$unresolved" ]]; then
+          log_err "unresolved consumer symlink; refusing to prune: $link"
+          exit 1
+        fi
+        unresolved=${unresolved%/*}
+      done
+      if [[ "$resolved" == "$root/"* ]]; then
+        relative=${resolved#"$root/"}
+        clone=${relative%%/*}
+        referenced["$root/$clone"]=1
+      fi
+    done < "$workdir/links"
   done
 
   if [[ ${#candidates[@]} -eq 0 ]]; then
@@ -214,21 +293,17 @@ cmd_prune() {
     exit 0
   fi
 
-  # Process each candidate
-  local pruned=0
+  # Finish all discovery/stat checks before deleting anything.
+  local candidate
   for candidate in "${candidates[@]}"; do
-    local canonical
-    canonical=$(cd "$candidate" && pwd -P 2>/dev/null) || canonical="$candidate"
-
-    if [[ -n "${referenced[$canonical]+x}" || -n "${referenced[$candidate]+x}" ]]; then
+    if [[ -n "${referenced[$candidate]+x}" ]]; then
       continue  # still referenced
     fi
 
     # Check min-age
     if [[ "$min_age_min" -gt 0 ]]; then
       local mtime_min
-      # Try GNU stat first, then BSD stat
-      mtime_min=$(stat -c '%Y' "$candidate" 2>/dev/null) || mtime_min=$(stat -f '%m' "$candidate" 2>/dev/null) || mtime_min=0
+      mtime_min=$(stat -c '%Y' -- "$candidate") || exit 1
       local now_s
       now_s=$(date +%s)
       local age_min=$(( (now_s - mtime_min) / 60 ))
@@ -238,18 +313,23 @@ cmd_prune() {
       fi
     fi
 
+    eligible+=("$candidate")
+  done
+
+  local pruned=0
+  for candidate in "${eligible[@]}"; do
     if [[ "$dry_run" -eq 1 ]]; then
       echo "$(basename "$candidate")  orphan"
       continue
     fi
 
     if [[ "$assume_yes" -eq 1 ]]; then
-      rm -rf "$candidate"
+      rm -rf -- "$candidate"
       echo "Pruned: $(basename "$candidate")"
       pruned=$(( pruned + 1 ))
     else
       if confirm "Delete orphan $(basename "$candidate")?" 1; then
-        rm -rf "$candidate"
+        rm -rf -- "$candidate"
         echo "Pruned: $(basename "$candidate")"
         pruned=$(( pruned + 1 ))
       fi
@@ -259,7 +339,7 @@ cmd_prune() {
   if [[ "$dry_run" -eq 0 && "$pruned" -eq 0 ]]; then
     echo "nothing to prune"
   fi
-}
+)
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] || return 0
 

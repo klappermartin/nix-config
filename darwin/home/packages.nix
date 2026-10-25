@@ -28,13 +28,13 @@
     google-cloud-sdk
     handy
     hyperfine
-    nerd-fonts.jetbrains-mono
     mqttui
     mutt
     nixd
     nixfmt
     nmap
     nodejs_22
+    pnpm
     obsidian
     osu-lazer-bin
     procs

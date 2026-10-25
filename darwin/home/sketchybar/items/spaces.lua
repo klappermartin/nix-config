@@ -4,7 +4,7 @@ local settings = require("settings")
 
 local spaces = {}
 
-for i = 1, 10 do
+for i = 1, settings.space_count do
   local space = sbar.add("space", "space." .. i, {
     space = i,
     position = "left",

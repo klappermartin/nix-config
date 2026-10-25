@@ -1,25 +1,20 @@
 {
+  config,
   lib,
   pkgs,
   ...
 }:
 let
-  # one binding per {lalt, ralt} x space 1-4; SPACES holds the space ids of the focused display
+  # These are display-local indices, unlike Sketchybar's global space slots.
+  spaceKeys = map toString (lib.range 1 config.workstation.desktop.spaceKeysPerDisplay);
   forEachSpace =
     action:
     lib.concatMapStringsSep "\n" (
       binding:
-      lib.concatMapStringsSep "\n"
-        (
-          n:
-          "${binding} - ${n} : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[${n}] ]] && ${action} $SPACES[${n}]"
-        )
-        [
-          "1"
-          "2"
-          "3"
-          "4"
-        ]
+      lib.concatMapStringsSep "\n" (
+        n:
+        "${binding} - ${n} : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[${n}] ]] && ${action} $SPACES[${n}]"
+      ) spaceKeys
     );
   focusSpace = forEachSpace "yabai -m space --focus" [
     "lalt"
@@ -31,13 +26,52 @@ let
   ];
 in
 {
+  launchd.agents.skhd = {
+    restartTriggers = [ config.xdg.configFile."skhd/skhdrc".source ];
+    config.EnvironmentVariables = {
+      SHELL = "${pkgs.zsh}/bin/zsh";
+      XDG_CONFIG_HOME = config.xdg.configHome;
+      PATH =
+        lib.makeBinPath [
+          pkgs.yabai
+          pkgs.jq
+          pkgs.sketchybar
+          config.services.skhd.package
+        ]
+        + ":/usr/bin:/bin:/usr/sbin:/sbin";
+    };
+  };
+
+  # Retire skhd --install-service's old registration before HM starts its agent.
+  # Preserve the old plist outside LaunchAgents for inspection/recovery.
+  home.activation.retireLegacySkhd =
+    lib.hm.dag.entryBetween [ "setupLaunchAgents" ] [ "writeBoundary" ]
+      ''
+        legacy=${lib.escapeShellArg "${config.home.homeDirectory}/Library/LaunchAgents/com.koekeishiya.skhd.plist"}
+        retired=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/retired-launchagents"}
+        if /bin/launchctl print "gui/$UID/com.koekeishiya.skhd" >/dev/null 2>&1; then
+          version=$(/usr/bin/sw_vers --productVersion)
+          if [[ "''${version%%.*}" -ge 26 ]]; then
+            run /bin/launchctl bootout --wait "gui/$UID/com.koekeishiya.skhd"
+          else
+            run /bin/launchctl bootout "gui/$UID/com.koekeishiya.skhd"
+            run sleep 1
+          fi
+        fi
+        if [[ -e "$legacy" || -L "$legacy" ]]; then
+          run mkdir -p "$retired"
+          run ${pkgs.coreutils}/bin/mv --backup=numbered -T -- "$legacy" "$retired/com.koekeishiya.skhd.plist"
+        fi
+        run mkdir -p ${lib.escapeShellArg "${config.home.homeDirectory}/Library/Logs/skhd"}
+      '';
+
   services.skhd = {
     enable = true;
     package = pkgs.skhd;
     # Copied from https://github.com/FelixKratz/dotfiles/blob/master/.config/skhd/skhdrc
     config = ''
       ## Navigation (lalt - ...)
-      # Space Navigation (four spaces per display): {lalt, ralt} - {1, 2, 3, 4}
+      # Space Navigation: numbered spaces on the focused display
       ${focusSpace}
 
       # Window Navigation (through display borders): lalt - {h, j, k, ;}
@@ -61,15 +95,15 @@ in
 
       ## Window Movement (shift + lalt - ...)
       # Moving windows in spaces: shift + lalt - {j, k, l, ;}
-      shift + lalt - h : yabai -m window --warp west || $(yabai -m window --display west && yabai -m display --focus west && yabai -m window --warp last) || yabai -m window --move rel:-10:0
-      shift + lalt - j : yabai -m window --warp south || $(yabai -m window --display south && yabai -m display --focus south) || yabai -m window --move rel:0:10
-      shift + lalt - k : yabai -m window --warp north || $(yabai -m window --display north && yabai -m display --focus north) || yabai -m window --move rel:0:-10
-      shift + lalt - l : yabai -m window --warp east || $(yabai -m window --display east && yabai -m display --focus east && yabai -m window --warp first) || yabai -m window --move rel:10:0
+      shift + lalt - h : yabai -m window --warp west || (yabai -m window --display west && yabai -m display --focus west && yabai -m window --warp last) || yabai -m window --move rel:-10:0
+      shift + lalt - j : yabai -m window --warp south || (yabai -m window --display south && yabai -m display --focus south) || yabai -m window --move rel:0:10
+      shift + lalt - k : yabai -m window --warp north || (yabai -m window --display north && yabai -m display --focus north) || yabai -m window --move rel:0:-10
+      shift + lalt - l : yabai -m window --warp east || (yabai -m window --display east && yabai -m display --focus east && yabai -m window --warp first) || yabai -m window --move rel:10:0
 
       # Toggle split orientation of the selected windows node: shift + lalt - s
       shift + lalt - s : yabai -m window --toggle split
 
-      # Moving windows between spaces: shift + {lalt, ralt} - {1, 2, 3, 4}, shift + lalt - {p, n} (Assumes 4 Spaces Max per Display)
+      # Moving windows between spaces: shift + {lalt, ralt} + number; previous/next: p/n
       ${moveToSpace}
 
       shift + lalt - p : yabai -m window --space prev && yabai -m space --focus prev

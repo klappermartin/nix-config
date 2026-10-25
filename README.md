@@ -1,6 +1,6 @@
 # nix-config
 
-nix-config for development machine (currently only aarch64-darwin / Apple Silicon)
+nix-config for Apple Silicon development machines, sharing one nix-darwin/Home Manager setup.
 
 ## Features
 
@@ -38,26 +38,97 @@ cd ~/nix
 
 ### Initial Setup
 
-1. Run darwin-rebuild for the first time
+1. Run the darwin-rebuild supplied by this repository's locked Darwin input:
 
 ```bash
-sudo nix run github:nix-darwin/nix-darwin/master#darwin-rebuild -- switch --flake .
+sudo nix run .#darwin-rebuild -- switch --flake .#mb-pro
 ```
 
 2. After the first switch, you can use:
 ```bash
-sudo darwin-rebuild switch --flake .
+sudo darwin-rebuild switch --flake .#mb-pro
 ```
+
+Use `mb-pro-m5` instead of `mb-pro` for the second MacBook. Explicit selectors
+make installation independent of the machine's current LocalHostName.
+
+### Second MacBook
+
+Both M2 and M5 use `aarch64-darwin`; no hardware configuration or CPU-specific
+package set is needed. `hosts/mb-pro-m5/default.nix` imports the same Darwin
+configuration. Review its username before installation (currently `martin`).
+Host identity/platform and future exceptions belong in `hosts/<name>/default.nix`.
+For example, host-local Home Manager overrides can set:
+
+```nix
+home-manager.users.martin.workstation.desktop = {
+  networkInterface = "en0";
+  spaceKeysPerDisplay = 4; # focused-display hotkey indices
+  spaceCount = 10;        # global status-bar slots across all displays
+};
+```
+
+Install Xcode/Command Line Tools as needed; the full Xcode bundle is currently a
+manual prerequisite. Grant Accessibility permissions to yabai/skhd and App
+Management permissions when macOS requests them. Set up SSH/signing keys and
+application logins separately; private keys and credentials are not in this repo.
+Git signing currently expects `~/.ssh/id_ed25519.pub`; if using a new key, register
+it with GitHub and update the allowed-signers declaration in `git.nix`.
+
+Keep `system.stateVersion` and `home.stateVersion` as compatibility settings;
+they do not select package releases. A future Intel or NixOS machine needs a
+separate platform/OS composition, not an M-series chip-name conditional.
 
 ## Configuration Structure
 
 - `flake.nix` - Main entry point and input definitions
+- `hosts/mb-pro/`, `hosts/mb-pro-m5/` - Thin host identity/platform layers
+- `darwin/default.nix` - Shared, explicit Darwin module composition
 - `darwin/system/configuration.nix` - System-wide macOS settings
 - `darwin/system/homebrew.nix` - Homebrew (nix-homebrew taps + casks) and Rosetta
 - `darwin/system/home-manager.nix` - home-manager wiring
 - `darwin/system/overlays.nix` - nixpkgs overlays (NUR, package pins)
 - `darwin/home/home.nix` - User-specific configurations
+- `darwin/home/desktop.nix` - Host-overridable desktop settings
 - `darwin/home/sketchybar/` - Status bar Lua configuration
+
+## Maintenance
+
+```sh
+make check                   # evaluate both hosts without building or activating
+make build HOST=mb-pro       # build this host without activating it
+sudo darwin-rebuild switch --flake .#mb-pro
+```
+
+For a source-only, offline evaluation (requires cached input sources):
+
+```sh
+nix eval --offline --no-write-lock-file \
+  --option allow-import-from-derivation false --raw \
+  .#darwinConfigurations.mb-pro.system.drvPath
+```
+
+Update inputs deliberately with `nix flake update`, review `flake.lock`, then run
+the checks and build before switching. `make check` does not build the complete
+system. A build does not activate it or validate live permissions, hotkeys, or
+application behavior. After a switch, check the managed skhd agent and exercise
+window/space bindings and the status bar:
+
+```sh
+launchctl print "gui/$(id -u)/org.nix-community.home.skhd"
+```
+
+The next activation retires a legacy `com.koekeishiya.skhd` registration before
+starting the managed agent. Its plist is preserved under
+`~/.local/state/home-manager/retired-launchagents/`. Do not run skhd's separate
+service installer; Home Manager owns that service.
+
+Keep a known-good Git revision/lock for recovery. To return to it, build and switch
+that revision with the explicit host selector. Existing system generations are
+also subject to the configured `nh` retention policy (five generations/seven days).
+Nix rollback does not restore mutable application data or all Homebrew versions;
+use normal data backups for those. `darwin-rebuild switch --dry-run` is not a
+substitute for the non-activating evaluation/build commands above.
 
 ## Included Software
 
@@ -78,17 +149,28 @@ sudo darwin-rebuild switch --flake .
 config for this is very much taken from https://github.com/FelixKratz - amazing repos!
 
 ### Homebrew Applications
-- whatever is not available on nixpkgs for darwin (or has macOS such as screen share permissions)
-- cleanup is `zap`, which deletes app data of casks removed from the list, so apps
-  with local state worth keeping (chat history, mail) are installed from nixpkgs
+- Prefer nixpkgs; Homebrew handles macOS availability/packaging exceptions.
+- Homebrew is exclusively declarative. `cleanup = "zap"` deliberately removes
+  **all packages absent from the Brewfile**, including manual installations, and
+  applies casks' associated-data cleanup rules. Declare additions in
+  `darwin/system/homebrew.nix`.
+- Tap recipes are pinned by `flake.lock`. Checksum-free vendor downloads,
+  application self-updaters, and greedy casks can still change independently.
 
 ## Utilities
 
 ### oss-ref — OSS Reference Manager
 
-`oss-ref` clones versioned OSS repositories into a shared references root and symlinks them into consumer projects. A weekly launchd agent prunes orphaned references automatically. See [`skills/oss-reference/SKILL.md`](skills/oss-reference/SKILL.md) for full documentation.
+`oss-ref` clones versioned OSS repositories into a shared references root and symlinks them into consumer projects. A weekly launchd agent reports orphaned references without deleting them. See [`skills/oss-reference/SKILL.md`](skills/oss-reference/SKILL.md) for full documentation.
 
 Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-references`) and `OSS_REFERENCES_CONSUMER_ROOTS` (default: `~/code`).
+
+All consumers must be discoverable under those roots. Missing roots, scan errors,
+or unresolved symlink loops abort pruning; links into clone subdirectories protect
+the whole clone. `add` reuses a verified repository/version and rejects destinations
+outside the discovery scope. Preview with `oss-ref prune --dry-run`; delete with
+`oss-ref prune --yes --min-age 7d`. After auditing existing consumers, automatic
+deletion can be enabled with `services.oss-references-pruner.dryRun = false`.
 
 ## TODO List
 
@@ -111,7 +193,7 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
    - [ ] Research / Set up aliases for Kagi search lenses
 
 6. **General**
-    - [ ] Setup non-darwin config before moving machine
+    - [ ] Add a separate OS composition if a NixOS host is introduced
 
 ## Usage Notes
 
@@ -133,7 +215,7 @@ Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-re
   Ctrl-Space toggles the full-command preview, Ctrl-Y copies, and Enter inserts
   the command for editing.
 - btop uses the terminal's ANSI colors and background. In-app settings changes
-  last for the session; persistent settings live in `programs/default.nix`.
+  last for the session; persistent settings live in `darwin/home/programs/default.nix`.
 - Herdr settings stay writable. Rebuilds merge the declared settings into
   `~/.config/herdr/config.toml`; declared values (including the command-keybinding
   array) win. Removing a declaration does not remove its saved value.

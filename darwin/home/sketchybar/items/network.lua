@@ -3,12 +3,12 @@ local settings = require("settings")
 local icons = require("icons")
 
 -- Module-level state for delta calculation (no state file needed)
-local prev_tx = 0
-local prev_rx = 0
+local prev_tx, prev_rx, prev_time
+local pending = false
 
 local function format_bytes(bytes)
   if bytes < 1000 then
-    return string.format("%4dB", bytes)
+    return string.format("%4dB", math.floor(bytes))
   elseif bytes < 1000000 then
     return string.format("%4dK", math.floor(bytes / 1000))
   else
@@ -32,26 +32,38 @@ local network = sbar.add("item", "network", {
   },
 })
 
-network:subscribe({ "routine", "forced" }, function(env)
-  sbar.exec("netstat -ibn | awk '/Link#/ && $1==\"en0\" {print $7, $10; exit}'", function(result)
-    local tx_str, rx_str = result:match("(%d+)%s+(%d+)")
-    if not tx_str then return end
+network:subscribe({ "routine", "forced", "system_woke" }, function(env)
+  if env.SENDER == "system_woke" then prev_tx, prev_rx, prev_time = nil, nil, nil end
+  if pending then return end
+  pending = true
+  local command = "/usr/sbin/netstat -ibn | /usr/bin/awk -v now=\"$(/bin/date +%s)\" "
+    .. "'/Link#/ && $1==\"" .. settings.network_interface .. "\" {print $7, $10, now; exit}'"
+  sbar.exec(command, function(result)
+    pending = false
+    local rx_str, tx_str, time_str = (result or ""):match("(%d+)%s+(%d+)%s+(%d+)")
+    if not rx_str then
+      prev_tx, prev_rx, prev_time = nil, nil, nil
+      network:set({ label = { string = icons.network.up .. "   -- " .. icons.network.down .. "   --" } })
+      return
+    end
 
-    local tx = tonumber(tx_str) or 0
-    local rx = tonumber(rx_str) or 0
+    local tx, rx, now = tonumber(tx_str), tonumber(rx_str), tonumber(time_str)
 
     local tx_delta = 0
     local rx_delta = 0
 
-    if prev_tx > 0 and tx >= prev_tx then
-      tx_delta = (tx - prev_tx) / 2  -- divide by update_freq (2s)
-    end
-    if prev_rx > 0 and rx >= prev_rx then
-      rx_delta = (rx - prev_rx) / 2
+    if prev_time and now > prev_time then
+      local elapsed = now - prev_time
+      if tx >= prev_tx then tx_delta = (tx - prev_tx) / elapsed end
+      if rx >= prev_rx then rx_delta = (rx - prev_rx) / elapsed end
+    elseif prev_time and now == prev_time then
+      -- Keep the previous sample for a later nonzero interval.
+      return
     end
 
     prev_tx = tx
     prev_rx = rx
+    prev_time = now
 
     network:set({
       label = {

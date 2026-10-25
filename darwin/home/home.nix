@@ -1,5 +1,6 @@
 {
   imports = [
+    ./desktop.nix
     ./packages.nix
     ./programs
     ./services

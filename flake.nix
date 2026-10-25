@@ -37,31 +37,36 @@
 
   outputs =
     inputs@{
+      self,
       nixpkgs,
-      home-manager,
       darwin,
-      nix-homebrew,
       ...
     }:
     let
-      username = "martin";
+      mkDarwin =
+        host:
+        darwin.lib.darwinSystem {
+          specialArgs = { inherit inputs; };
+          modules = [ host ];
+        };
+      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
     in
     {
-      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
+      formatter.aarch64-darwin = pkgs.nixfmt-tree;
+      packages.aarch64-darwin.darwin-rebuild = darwin.packages.aarch64-darwin.darwin-rebuild;
       darwinConfigurations = {
-        "mb-pro" = darwin.lib.darwinSystem {
-          specialArgs = {
-            inherit inputs username;
-          };
-          modules = [
-            ./darwin/system/configuration.nix
-            ./darwin/system/overlays.nix
-            nix-homebrew.darwinModules.nix-homebrew
-            ./darwin/system/homebrew.nix
-            home-manager.darwinModules.home-manager
-            ./darwin/system/home-manager.nix
-          ];
-        };
+        mb-pro = mkDarwin ./hosts/mb-pro;
+        mb-pro-m5 = mkDarwin ./hosts/mb-pro-m5;
+      };
+      checks.aarch64-darwin = {
+        # Force every host's system evaluation without realizing its whole closure.
+        host-evaluation = pkgs.writeText "darwin-host-evaluation.json" (
+          builtins.toJSON (
+            builtins.mapAttrs (
+              _: host: builtins.unsafeDiscardStringContext host.system.drvPath
+            ) self.darwinConfigurations
+          )
+        );
       };
     };
 }

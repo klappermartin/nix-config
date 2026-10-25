@@ -29,7 +29,6 @@
   ];
 
   nixpkgs = {
-    hostPlatform = "aarch64-darwin";
     config.allowUnfree = true;
   };
 
@@ -134,6 +133,9 @@
     };
   };
 
+  launchd.user.agents.sketchybar.serviceConfig.EnvironmentVariables.XDG_CONFIG_HOME =
+    config.home-manager.users.${username}.xdg.configHome;
+
   system = {
     defaults = {
       ActivityMonitor.IconType = 5;
@@ -204,8 +206,6 @@
     };
 
     primaryUser = username;
-
-    stateVersion = 5;
   };
 
   users.users.${username}.home = "/Users/${username}";

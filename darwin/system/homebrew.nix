@@ -33,8 +33,9 @@
     caskArgs = {
       require_sha = true;
     };
-    # zap removes app data of casks dropped from this list; apps with local
-    # state worth keeping (chat history, mail) belong in nixpkgs instead
+    # Homebrew is exclusively declarative: zap removes ALL unlisted packages,
+    # including manual installs, and applies casks' associated-data cleanup rules.
+    # Prefer nixpkgs; Homebrew is only for macOS packaging/availability exceptions.
     casks =
       let
         cask = name: {
@@ -60,7 +61,8 @@
     onActivation = {
       autoUpdate = false;
       cleanup = "zap";
-      # taps are pinned via flake.lock, so this only upgrades casks after `nix flake update`
+      # Recipes are lock-pinned. Unchecked vendor downloads and app self-updates
+      # can still change independently; greedy casks may upgrade on any rebuild.
       upgrade = true;
     };
   };

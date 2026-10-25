@@ -12,6 +12,8 @@ let
       pkgs.git
       pkgs.coreutils
       pkgs.findutils
+      pkgs.gnugrep
+      pkgs.gnused
     ];
     text = builtins.readFile ./oss-ref.sh;
   };
@@ -33,7 +35,7 @@ in
     consumerRoots = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "${config.home.homeDirectory}/code" ];
-      description = "Roots the pruner scans for incoming symlinks. Exported as OSS_REFERENCES_CONSUMER_ROOTS (colon-joined).";
+      description = "Existing roots scanned for consumer symlinks. add requires a discoverable destination in this scope; prune aborts on missing roots or scan errors. Exported colon-joined.";
     };
   };
 

@@ -11,6 +11,11 @@ in
 {
   options.services.oss-references-pruner = {
     enable = lib.mkEnableOption "Weekly launchd agent that runs oss-ref prune";
+    dryRun = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Report orphans without deleting them. Disable after reviewing consumer scope and scan results.";
+    };
     minAge = lib.mkOption {
       type = lib.types.str;
       default = "7d";
@@ -42,7 +47,7 @@ in
         ProgramArguments = [
           (lib.getExe base.package)
           "prune"
-          "--yes"
+          (if cfg.dryRun then "--dry-run" else "--yes")
           "--min-age"
           cfg.minAge
         ];

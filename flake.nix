@@ -54,6 +54,11 @@
     {
       formatter.aarch64-darwin = pkgs.nixfmt-tree;
       packages.aarch64-darwin.darwin-rebuild = darwin.packages.aarch64-darwin.darwin-rebuild;
+      packages.aarch64-darwin.home-manager = inputs.home-manager.packages.aarch64-darwin.home-manager;
+      homeConfigurations."martin@mb-pro-m5-work" = inputs.home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+        modules = [ ./hosts/mb-pro-m5-work/home.nix ];
+      };
       darwinConfigurations = {
         mb-pro = mkDarwin ./hosts/mb-pro;
         mb-pro-m5 = mkDarwin ./hosts/mb-pro-m5;
@@ -85,6 +90,10 @@
               _: host: builtins.unsafeDiscardStringContext host.system.drvPath
             ) self.darwinConfigurations
           )
+        );
+        work-home-evaluation = pkgs.writeText "work-home-evaluation.json" (
+          builtins.unsafeDiscardStringContext
+            self.homeConfigurations."martin@mb-pro-m5-work".activationPackage.drvPath
         );
       };
     };

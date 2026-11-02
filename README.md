@@ -147,10 +147,9 @@ Window-management configuration draws from [FelixKratz's dotfiles](https://githu
 
 ### Homebrew Applications
 - Prefer nixpkgs; Homebrew handles macOS availability/packaging exceptions.
-- Homebrew is exclusively declarative. `cleanup = "zap"` deliberately removes
-  **all packages absent from the Brewfile**, including manual installations, and
-  applies casks' associated-data cleanup rules. Declare additions in
-  `darwin/system/homebrew.nix`.
+- Homebrew cleanup is disabled (`none`), so unlisted packages remain installed.
+  Declared casks are still installed/upgraded during activation; this is not an
+  IT app allowlist. See `darwin/system/homebrew.nix` before changing ownership.
 - Tap recipes are pinned by `flake.lock`. Checksum-free vendor downloads,
   application self-updaters, and greedy casks can still change independently.
 

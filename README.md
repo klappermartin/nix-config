@@ -66,25 +66,6 @@ home-manager.users.martin.workstation.desktop = {
 };
 ```
 
-### Company-managed M5 profile
-
-`homeConfigurations."martin@mb-pro-m5-work"` is a standalone Home Manager
-profile for the managed Mac. It does not apply nix-darwin system settings,
-Homebrew, or system/background services. It installs a small OSS developer-tool
-set and plain OpenCode, with no configured provider, plugin, or MCP server.
-
-After IT approves Nix and Home Manager, activate it without `sudo`:
-
-```sh
-nix run .#home-manager -- switch --flake .#martin@mb-pro-m5-work
-```
-
-This is a reduced user-level profile, not an MDM/security boundary. OpenCode
-still discovers project configuration, and provider use or additional MCPs
-should only be enabled with company approval. Existing credentials or migrated
-OpenCode data are not removed by this profile. Nix itself and its daemon still
-require separate IT approval.
-
 Install Command Line Tools for development; install full Xcode separately for
 projects that require it. Grant Accessibility permissions to yabai/skhd and App
 Management permissions when macOS requests them. Set up SSH/signing keys and
@@ -100,7 +81,6 @@ separate platform/OS composition, not an M-series chip-name conditional.
 
 - `flake.nix` - Main entry point and input definitions
 - `hosts/mb-pro/`, `hosts/mb-pro-m5/` - Thin host identity/platform layers
-- `hosts/mb-pro-m5-work/home.nix` - Minimal standalone Home Manager profile
 - `darwin/default.nix` - Shared, explicit Darwin module composition
 - `darwin/system/configuration.nix` - System-wide macOS settings
 - `darwin/system/homebrew.nix` - Homebrew (nix-homebrew taps + casks) and Rosetta
@@ -110,7 +90,6 @@ separate platform/OS composition, not an M-series chip-name conditional.
 - `darwin/home/desktop.nix` - Host-overridable desktop settings
 - `darwin/home/sketchybar/` - Status bar Lua configuration
 - `darwin/home/programs/opencode/` - OpenCode packages and global configuration
-- `.opencode/opencode.json` - NixOS MCP connection for this repository
 
 ## Maintenance
 
@@ -157,7 +136,7 @@ substitute for the non-activating evaluation/build commands above.
 - Kitty terminal
 - Tmux
 - Git setup
-- OpenCode V2 — see [configuration and project MCP setup](darwin/home/programs/opencode/README.md)
+- OpenCode — see [Home Manager setup](darwin/home/programs/opencode/README.md)
 ### Window Management
 - Yabai for tiling window management
 - Skhd for keyboard shortcuts

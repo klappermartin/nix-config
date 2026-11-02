@@ -39,8 +39,13 @@ cd ~/nix
 1. Run the darwin-rebuild supplied by this repository's locked Darwin input:
 
 ```bash
-sudo nix run .#darwin-rebuild -- switch --flake .#mb-pro
+sudo -H nix --extra-experimental-features 'nix-command flakes' \
+  run .#darwin-rebuild -- switch --flake .#mb-pro
 ```
+
+The flake features are passed explicitly because this first switch runs as root;
+your `~/.config/nix/nix.conf` applies to your user, not root. `-H` gives the
+sudo command root's home directory instead of inheriting your user `HOME`.
 
 2. After the first switch, you can use:
 ```bash

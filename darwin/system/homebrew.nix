@@ -47,7 +47,6 @@
       in
       map cask [
         "balenaetcher"
-        "karabiner-elements"
         "linear"
       ]
       ++ map unverifiedCask [

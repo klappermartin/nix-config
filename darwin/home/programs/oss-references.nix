@@ -14,6 +14,7 @@ let
       pkgs.findutils
       pkgs.gnugrep
       pkgs.gnused
+      pkgs.jq
     ];
     text = builtins.readFile ./oss-ref.sh;
   };

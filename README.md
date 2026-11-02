@@ -161,6 +161,19 @@ Window-management configuration draws from [FelixKratz's dotfiles](https://githu
 
 `oss-ref` clones versioned OSS repositories into a shared references root and symlinks them into consumer projects. A weekly launchd agent reports orphaned references without deleting them. See [`skills/oss-reference/SKILL.md`](skills/oss-reference/SKILL.md) for full documentation.
 
+Projects can declare npm package-to-repository mappings in `.oss-references.json`.
+After dependency installation, `oss-ref sync` updates reference symlinks to the
+installed versions. `oss-ref check` detects drift without fetching or changing
+files. Both accept an optional manifest path and support hoisted/scoped packages.
+Missing release tags fail explicitly; no latest-branch fallback is used.
+
+The offline integration suite covers upgrades, shared checkouts, invalid
+manifests, missing tags and checkout drift:
+
+```sh
+nix build .#checks.aarch64-darwin.oss-references
+```
+
 Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-references`) and `OSS_REFERENCES_CONSUMER_ROOTS` (default: `~/code`).
 
 All consumers must be discoverable under those roots. Missing roots, scan errors,

@@ -1,6 +1,6 @@
 ---
 name: oss-reference
-description: Clone versioned OSS repositories as shared references and manage them with add, prune, and list subcommands.
+description: Manage version-pinned OSS source references with oss-ref. Use when adding library source checkouts, synchronizing references after dependency upgrades, checking stale references, or pruning unused clones.
 ---
 
 ## Overview
@@ -8,6 +8,62 @@ description: Clone versioned OSS repositories as shared references and manage th
 `oss-ref` clones open-source repositories at a specific version into a shared references root, then creates a consumer-side symlink. This avoids duplicate clones across projects. The pruner removes orphaned references that no longer have incoming symlinks, and the list command shows everything currently stored.
 
 ## Usage
+
+### sync / check
+
+**Signatures:** `oss-ref sync [manifest]`, `oss-ref check [manifest]`
+
+Declare npm dependencies that need source references in `.oss-references.json`:
+
+```json
+{
+  "references": {
+    "effect": {
+      "package": "effect",
+      "repository": "https://github.com/Effect-TS/effect.git",
+      "ref": "effect@{version}",
+      "path": "repos/effect"
+    }
+  }
+}
+```
+
+Both commands default to the manifest in the current directory. An explicit
+manifest path supports invocation from elsewhere. Reference paths are relative
+to the manifest directory and must stay inside it, without overlapping other
+reference paths. Unknown fields are rejected to catch configuration typos.
+
+`sync` reads each package's **installed** version from `node_modules`, starting
+beside the manifest and checking ancestor directories for hoisted packages.
+Scoped packages and symlinked installations are supported. Install dependencies
+first; neither semver ranges in `package.json` nor lockfiles are parsed. It then
+substitutes `{version}` in the Git ref and uses `add` to fetch/reuse the checkout
+and update the symlink. Re-running sync is safe; other projects retain their own
+references. A missing ref fails without switching to a default branch. Entries
+are applied sequentially; a later Git failure can leave earlier entries synced.
+
+`check` performs no fetches or writes. It validates the consumer symlink, expected
+store target, origin URL, HEAD against the requested ref, recorded version (when
+present), and tracked-file cleanliness. Modified checkouts are reported rather
+than reset. Untracked scratch files do not affect the check.
+
+After upgrading dependencies:
+
+```bash
+bun install
+oss-ref sync
+oss-ref check
+```
+
+Before relying on reference sources, run `check`. After dependency upgrades,
+install the selected dependencies and run `sync` before typechecking/testing.
+Keep package-to-repository mappings in the manifest, rather than hard-coding the
+currently installed release in agent instructions. Repositories choose their own
+tag conventions; verify the correct pattern when adding a library.
+
+**Exit codes:** `0` for success, `1` for missing installs, stale references or
+runtime failures, `2` for invalid arguments or manifests. `check` examines every
+resolved reference and reports all drift. `sync` stops on an `add` failure.
 
 ### add
 

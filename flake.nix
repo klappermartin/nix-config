@@ -59,6 +59,25 @@
         mb-pro-m5 = mkDarwin ./hosts/mb-pro-m5;
       };
       checks.aarch64-darwin = {
+        oss-references =
+          pkgs.runCommand "oss-references-tests"
+            {
+              nativeBuildInputs = with pkgs; [
+                bash
+                git
+                coreutils
+                findutils
+                gnugrep
+                gnused
+                jq
+                shellcheck
+              ];
+            }
+            ''
+              shellcheck ${./darwin/home/programs/oss-ref.sh} ${./tests/oss-ref.sh}
+              bash ${./tests/oss-ref.sh} ${./darwin/home/programs/oss-ref.sh}
+              touch "$out"
+            '';
         # Force every host's system evaluation without realizing its whole closure.
         host-evaluation = pkgs.writeText "darwin-host-evaluation.json" (
           builtins.toJSON (

@@ -116,6 +116,8 @@ Usage: oss-ref <subcommand> [args]
 
 Subcommands:
   add <git-url> <version> <symlink-path>   Clone <git-url>@<version> under the references root and symlink from <symlink-path>.
+  sync [manifest]                         Sync references to installed npm package versions.
+  check [manifest]                        Check references without fetching or changing files.
   prune [--yes|--dry-run] [--min-age <dur>] [-v]   Remove reference clones with no incoming symlinks under configured consumer roots.
   list                                            List all versioned clones under the references root.
   help                                            Show this message.
@@ -123,6 +125,10 @@ Subcommands:
 Environment:
   OSS_REFERENCES_ROOT          Root directory for clones. Default: $HOME/code/others/oss-references
   OSS_REFERENCES_CONSUMER_ROOTS Colon-separated roots the pruner scans for incoming symlinks. Default: $HOME/code
+
+sync/check default to .oss-references.json in the current directory. Install
+dependencies first. Package lookup starts beside the manifest and checks ancestor
+node_modules directories for hoisted dependencies. Paths are manifest-relative.
 HELP
 }
 
@@ -207,6 +213,127 @@ cmd_add() (
     exit 1
   fi
   echo "Symlink: $destination -> $target"
+)
+
+# Read package metadata directly, including packages that do not export package.json.
+# Do not execute project JavaScript or infer installed versions from semver ranges.
+installed_version() {
+  local directory="$1" package="$2" metadata
+  while :; do
+    metadata="$directory/node_modules/$package/package.json"
+    if [[ -f "$metadata" ]]; then
+      jq -er --arg package "$package" '
+        select(.name == $package) | .version |
+        select(type == "string") |
+        select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"))
+      ' "$metadata"
+      return
+    fi
+    [[ "$directory" != / ]] || break
+    directory=$(dirname -- "$directory")
+  done
+  return 1
+}
+
+reference_matches() {
+  local url="$1" ref="$2" destination="$3" target origin expected actual recorded
+  target="$(realpath -m -- "$ROOT")/$(derive_slug "$url")@$(sanitize_version "$ref")"
+  [[ -L "$destination" && -d "$target" && ! -L "$target" ]] || return 1
+  [[ "$(realpath -e -- "$destination")" == "$target" ]] || return 1
+  [[ -d "$target/.git" ]] || return 1
+  origin=$(git -C "$target" config --get remote.origin.url) || return 1
+  expected=$(git -C "$target" rev-parse --verify "$ref^{commit}") || return 1
+  actual=$(git -C "$target" rev-parse HEAD) || return 1
+  recorded=$(git -C "$target" config --get oss-ref.version || true)
+  [[ "$origin" == "$url" && "$expected" == "$actual" &&
+     ( -z "$recorded" || "$recorded" == "$ref" ) ]] || return 1
+  # A correct HEAD with edited tracked files is not a version-matched reference.
+  local changes
+  changes=$(git --no-optional-locks -C "$target" status --porcelain --untracked-files=no) || return 1
+  [[ -z "$changes" ]]
+}
+
+cmd_manifest() (
+  local mode="$1"
+  shift
+  [[ $# -le 1 && "${1:-}" != -* ]] || {
+    log_err "usage: oss-ref $mode [manifest]"; exit 2;
+  }
+  local manifest project entries
+  manifest=$(realpath -e -- "${1:-.oss-references.json}") || {
+    log_err "manifest not found: ${1:-.oss-references.json}"; exit 2;
+  }
+  project=$(dirname -- "$manifest")
+  # Reject typos, control characters and escaping paths before making any changes.
+  entries=$(jq -er '
+    def text: type == "string" and length > 0 and (test("[\\x00-\\x1f\\x7f]") | not);
+    def entry:
+      type == "object" and keys == ["package", "path", "ref", "repository"] and
+      all(.[]; text) and
+      (.package | test("^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$")) and
+      (.ref | contains("{version}")) and
+      (.path | test("^/|(^|/)\\.\\.(/|$)") | not);
+    if type == "object" and keys == ["references"] and
+       (.references | type == "object" and length > 0 and
+         all(to_entries[]; (.key | text) and (.value | entry)))
+    then .references | to_entries[] |
+      [.key, .value.package, .value.repository, .value.ref, .value.path] | join("\t")
+    else error("expected references with package, repository, ref containing {version}, and a relative path")
+    end
+  ' "$manifest") || { log_err "invalid manifest: $manifest"; exit 2; }
+
+  local -a names=() versions=() urls=() refs=() destinations=()
+  local name package url template path version ref destination parent previous
+  while IFS=$'\t' read -r name package url template path; do
+    version=$(installed_version "$project" "$package") || {
+      log_err "$name: cannot read installed version of $package; install dependencies first"; exit 1;
+    }
+    ref=${template//\{version\}/$version}
+    git check-ref-format "refs/tags/$ref" >/dev/null || {
+      log_err "$name: invalid Git ref: $ref"; exit 2;
+    }
+    # Resolve intermediate symlinks but not the final reference symlink.
+    parent=$(realpath -m -- "$project/$(dirname -- "$path")")
+    destination="$parent/$(basename -- "$path")"
+    [[ "$destination" == "$project/"* && "$(basename -- "$path")" != . ]] || {
+      log_err "$name: reference path must stay inside the project: $path"; exit 2;
+    }
+    for previous in "${destinations[@]}"; do
+      [[ "$destination" != "$previous" && "$destination" != "$previous/"* &&
+         "$previous" != "$destination/"* ]] || {
+        log_err "$name: overlapping reference paths: $path"; exit 2;
+      }
+    done
+    names+=("$name")
+    versions+=("$version")
+    urls+=("$url")
+    refs+=("$ref")
+    destinations+=("$destination")
+  done <<< "$entries"
+
+  local index failed=0
+  for index in "${!names[@]}"; do
+    name=${names[$index]}
+    version=${versions[$index]}
+    url=${urls[$index]}
+    ref=${refs[$index]}
+    destination=${destinations[$index]}
+    if [[ "$mode" == sync ]]; then
+      echo "Syncing $name: installed $version -> $ref"
+      # Keep add's locking, origin/version validation and consumer-scope checks.
+      cmd_add "$url" "$ref" "$destination"
+    fi
+    if reference_matches "$url" "$ref" "$destination" 2>/dev/null; then
+      echo "OK $name: installed $version -> $ref"
+    else
+      log_err "STALE $name: installed $version expects $ref at $destination"
+      failed=1
+    fi
+  done
+  if [[ "$failed" -ne 0 ]]; then
+    log_err "Run oss-ref sync to refresh missing/stale links; inspect conflicting or modified checkouts before retrying."
+  fi
+  exit "$failed"
 )
 
 cmd_prune() (
@@ -345,9 +472,10 @@ cmd_prune() (
 
 case "${1:-}" in
   add) shift; cmd_add "$@" ;;
+  sync|check) mode=$1; shift; cmd_manifest "$mode" "$@" ;;
   prune) shift; cmd_prune "$@" ;;
   list) shift; cmd_list "$@" ;;
   help|--help|-h) cmd_help; exit 0 ;;
   '') cmd_help; exit 0 ;;
-  *) log_err "usage: oss-ref <add|prune|list|help>"; exit 2 ;;
+  *) log_err "usage: oss-ref <add|sync|check|prune|list|help>"; exit 2 ;;
 esac

@@ -29,7 +29,9 @@
     enable = true;
     # use taps declared by nix-homebrew
     taps = builtins.attrNames config.nix-homebrew.taps;
-    brews = [ ];
+    brews = [
+      "helm"
+    ];
     caskArgs = {
       require_sha = true;
     };

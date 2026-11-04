@@ -28,6 +28,10 @@
         if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
           source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
         fi
+        # omz plugins write generated completions here; omz itself normally
+        # creates this directory, but home-manager only sources the plugin
+        # files, so the gh plugin fails without it.
+        mkdir -p "$ZSH_CACHE_DIR/completions"
       '')
       ''
         source ~/.p10k.zsh

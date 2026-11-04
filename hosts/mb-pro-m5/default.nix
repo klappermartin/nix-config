@@ -5,4 +5,7 @@
   _module.args.username = "martin.klapper";
   nixpkgs.hostPlatform = "aarch64-darwin";
   system.stateVersion = 5;
+
+  # The machine's SSH signing key (no default; every host declares its own).
+  home-manager.users."martin.klapper".workstation.ssh.keyFile = ".ssh/id_ed25519";
 }

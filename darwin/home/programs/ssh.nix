@@ -11,10 +11,13 @@
       "~/.ssh/config.d/*.conf"
       "~/.colima/ssh_config"
     ];
+    # Managed key comes from workstation.ssh.keyFile (each host declares it,
+    # see ../desktop.nix); per-machine overrides (e.g. a differently named key)
+    # can stay in ~/.ssh/config.d/*.conf, which is included before this.
     settings."github.com" = {
       AddKeysToAgent = "yes";
       UseKeychain = "yes";
-      IdentityFile = "~/.ssh/id_ed25519";
+      IdentityFile = "~/${config.workstation.ssh.keyFile}";
     };
   };
 

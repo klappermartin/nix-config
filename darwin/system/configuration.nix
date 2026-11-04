@@ -147,6 +147,9 @@
         autohide = true;
         launchanim = false;
         largesize = 54;
+        # Keep space ordering stable; yabai's focus/move commands index spaces
+        # by position, so macOS MRU reordering makes them target the wrong one.
+        mru-spaces = false;
         persistent-apps =
           let
             hm = config.home-manager.users.${username};
@@ -168,7 +171,9 @@
       finder = {
         AppleShowAllExtensions = true;
         AppleShowAllFiles = true;
-        CreateDesktop = false;
+        # yabai needs the Finder desktop window; disabling it breaks focusing
+        # empty spaces. Hide desktop icons via WindowManager instead if wanted.
+        CreateDesktop = true;
         FXPreferredViewStyle = "clmv";
         QuitMenuItem = true;
         ShowExternalHardDrivesOnDesktop = true;
@@ -202,6 +207,14 @@
         FirstClickThreshold = 0;
         SecondClickThreshold = 0;
         TrackpadRightClick = true;
+      };
+
+      # yabai recommends these for reliable space/display focus on macOS 14+.
+      # "Only in Stage Manager" prevents clicking the wallpaper from moving
+      # windows around; desktop items must stay enabled for empty-space focus.
+      WindowManager = {
+        EnableStandardClickToShowDesktop = false;
+        StandardHideDesktopIcons = false;
       };
     };
 

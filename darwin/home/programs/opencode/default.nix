@@ -5,10 +5,6 @@
   ...
 }:
 let
-  # The 2.x auth plugin targets OpenCode V2. Anthropic
-  # gates models on the Claude Code version this plugin reports; on 400
-  # `claude_code_version_too_old`, bump it or set `ANTHROPIC_CLAUDE_CODE_VERSION`.
-  anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
   opencodeV2Version = "2.0.24";
   codegraphVersion = "1.6.2";
   effectMcpVersion = "0.1.16";
@@ -72,13 +68,14 @@ let
     runtimeInputs = [
       pkgs.ripgrep
       pkgs.mcp-nixos
+      pkgs.codebase-memory-mcp
       effectMcp
       firefoxMcp
     ];
     runtimeEnv = {
       OPENCODE_DISABLE_AUTOUPDATE = "1";
-      # Preserve the existing V2 session/auth database across the profile cleanup.
-      OPENCODE_DB = "opencode-v2.db";
+      # Use the original database so sessions and credentials remain unified.
+      OPENCODE_DB = "opencode.db";
     };
     text = ''exec ${opencodeV2Bundle}/bin/opencode "$@"'';
   };
@@ -103,8 +100,11 @@ in
     enable = true;
     package = opencodeV2;
     settings = {
-      plugins = [ anthropicAuthPluginV2 ];
       mcp.servers = {
+        codebase_memory = {
+          type = "local";
+          command = [ (lib.getExe pkgs.codebase-memory-mcp) ];
+        };
         codegraph = {
           type = "local";
           command = [

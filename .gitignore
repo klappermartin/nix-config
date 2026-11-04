@@ -17,5 +17,6 @@ result
 # AI files
 # omo
 .sisyphus
+.codegraph
 
 .zed

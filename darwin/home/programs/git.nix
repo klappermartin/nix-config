@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -14,20 +15,22 @@ let
   defaultBranch = gitHelper "git-default-branch" ./git-default-branch.sh;
   sweep = gitHelper "git-sweep" ./git-sweep.sh;
   email = "64156820+klappermartin@users.noreply.github.com";
-  sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIESQFjRlkApLrMLCnGRedOl12/Zvf5V5wZsUJQoRNaZ9";
+  sshKeyFile = config.workstation.ssh.keyFile;
 in
 {
   programs.git = {
     enable = true;
+    includes = [
+      {
+        condition = "gitdir:~/code/work/";
+        path = "work.conf";
+      }
+    ];
     signing = {
       format = "ssh";
       # must be added on GitHub as a *signing* key
-      key = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
+      key = "${config.home.homeDirectory}/${sshKeyFile}.pub";
       signByDefault = true;
-      # lets `git log --show-signature` verify own commits locally
-      allowedSigners = ''
-        ${email} namespaces="git" ${sshPublicKey}
-      '';
     };
     settings = {
       alias = {
@@ -113,12 +116,38 @@ in
         enabled = true;
       };
 
+      # resolve to the per-machine file built by the home.activation step below,
+      # so `git log --show-signature` can verify own commits locally
+      "gpg.ssh" = {
+        allowedSignersFile = "~/.config/git/allowed_signers";
+      };
+
       user = {
         name = "Martin Klapper";
         inherit email;
       };
     };
   };
+
+  # Generate allowed_signers on the machine itself: the public key of this
+  # device lives outside the flake, so it cannot be read during (pure) eval.
+  # Reading it here in the activation script keeps the repo key-free.
+  # Let Home Manager remove the previously managed symlink first. Atomic
+  # replacement also avoids following any leftover symlink into the Nix store.
+  home.activation.allowedSigners = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ${pkgs.writeShellScript "generate-git-allowed-signers" ''
+      set -euo pipefail
+      export PATH=${lib.makeBinPath [ pkgs.coreutils ]}
+      key="$(cat ${lib.escapeShellArg "${config.home.homeDirectory}/${sshKeyFile}.pub"})"
+      directory=${lib.escapeShellArg "${config.home.homeDirectory}/.config/git"}
+      mkdir -p "$directory"
+      temporary="$(mktemp "$directory/.allowed_signers.XXXXXX")"
+      trap 'rm -f "$temporary"' EXIT
+      printf '%s namespaces="git" %s\n' ${lib.escapeShellArg email} "$key" > "$temporary"
+      chmod 600 "$temporary"
+      mv -fT "$temporary" "$directory/allowed_signers"
+    ''}
+  '';
 
   programs.gh = {
     enable = true;

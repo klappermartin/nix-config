@@ -63,7 +63,7 @@
     };
 
     tailscale = {
-      enable = true;
+      enable = false;
       # extraDaemonFlags = [ "--no-logs-no-support" ];
     };
 

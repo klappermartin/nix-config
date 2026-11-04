@@ -236,7 +236,6 @@
             tokyo-night-v2
             ublock-origin
             user-agent-string-switcher
-            unpaywall
             to-deepl
             link-cleaner
             youtube-recommended-videos

@@ -37,6 +37,7 @@
     nodejs_22
     pnpm
     obsidian
+    ollama
     osu-lazer-bin
     procs
     pi-coding-agent

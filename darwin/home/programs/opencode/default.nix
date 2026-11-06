@@ -145,6 +145,7 @@ in
       ast-grep = ./vendor/skills/ast-grep;
       git-master = ./vendor/skills/git-master;
       lsp-setup = ./vendor/skills/lsp-setup;
+      oss-reference = ../../../../skills/oss-reference;
       playwright = ./skills/playwright;
       visual-qa = ./vendor/skills/visual-qa;
     };

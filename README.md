@@ -179,10 +179,12 @@ nix build .#checks.aarch64-darwin.oss-references
 
 Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-references`) and `OSS_REFERENCES_CONSUMER_ROOTS` (default: `~/code`).
 
-All consumers must be discoverable under those roots. Missing roots, scan errors,
-or unresolved symlink loops abort pruning; links into clone subdirectories protect
-the whole clone. `add` reuses a verified repository/version and rejects destinations
-outside the discovery scope. Preview with `oss-ref prune --dry-run`; delete with
+All consumers must be discoverable under those roots. Pruning walks the store
+entries and checks each one for incoming consumer links, confirming apparent
+orphans with a full scan. Missing roots, scan errors, or unresolved symlink
+loops encountered during verification abort pruning; links into clone
+subdirectories protect the whole clone. `add` reuses a verified
+repository/version and rejects destinations outside the discovery scope. Preview with `oss-ref prune --dry-run`; delete with
 `oss-ref prune --yes --min-age 7d`. After auditing existing consumers, automatic
 deletion can be enabled with `services.oss-references-pruner.dryRun = false`.
 

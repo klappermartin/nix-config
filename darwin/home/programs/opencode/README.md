@@ -45,8 +45,10 @@ match documentation to the project's Effect version.
 ## Skills and language servers
 
 The existing Nix-managed skills are `ast-grep`, `git-master`, `lsp-setup`,
-`visual-qa`, and `playwright`. The first four and the standalone LSP CLI are
-snapshots under [`vendor/`](vendor/README.md); `playwright` is local.
+`visual-qa`, `playwright`, and `oss-reference`. The first four and the standalone
+LSP CLI are snapshots under [`vendor/`](vendor/README.md); `playwright` is local,
+and `oss-reference` comes from the repository-level [`skills/`](../../../../skills/)
+directory.
 
 Personal skills in `~/.agents/skills/` and `~/.claude/skills/` are managed outside
 this repository. Project skills belong in `.agents/skills/` or `.opencode/skills/`.

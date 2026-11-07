@@ -1,13 +1,13 @@
 # OpenCode
 
-Home Manager installs OpenCode V2, the Anthropic authentication plugin, MCP
-executables, the TypeScript language server, and a small baseline of skills.
+Home Manager installs OpenCode V2, MCP executables, the TypeScript language
+server, and a small baseline of skills.
 
 ## MCP scope
 
 | Scope | Servers |
 | --- | --- |
-| Global | Codegraph, Context7, grep.app, LSP, Exa web search, Linear, local Figma |
+| Global | Codebase Memory, Codegraph, Context7, grep.app, LSP, Exa web search, Linear, local Figma |
 | This repository | NixOS MCP, enabled by [`.opencode/opencode.json`](../../../../.opencode/opencode.json) |
 | Installed, enabled only by projects | `mcp-nixos`, `effect-mcp`, `firefox-devtools-mcp` |
 
@@ -45,8 +45,10 @@ match documentation to the project's Effect version.
 ## Skills and language servers
 
 The existing Nix-managed skills are `ast-grep`, `git-master`, `lsp-setup`,
-`visual-qa`, and `playwright`. The first four and the standalone LSP CLI are
-snapshots under [`vendor/`](vendor/README.md); `playwright` is local.
+`visual-qa`, `playwright`, and `oss-reference`. The first four and the standalone
+LSP CLI are snapshots under [`vendor/`](vendor/README.md); `playwright` is local,
+and `oss-reference` comes from the repository-level [`skills/`](../../../../skills/)
+directory.
 
 Personal skills in `~/.agents/skills/` and `~/.claude/skills/` are managed outside
 this repository. Project skills belong in `.agents/skills/` or `.opencode/skills/`.
@@ -63,10 +65,10 @@ LSP configuration.
 ## Versions and service
 
 OpenCode and Effect MCP use versioned npm bundles with fixed hashes in
-`default.nix`; Firefox DevTools, MCP-NixOS, and the TypeScript language server
-follow `flake.lock`. The OpenCode wrapper disables self-update.
+`default.nix`; Codebase Memory, Firefox DevTools, MCP-NixOS, and the TypeScript
+language server follow `flake.lock`. The OpenCode wrapper disables self-update.
 
-Keep `OPENCODE_DB=opencode-v2.db`: it selects the existing session/authentication
+Keep `OPENCODE_DB=opencode.db`: it selects the unified session/authentication
 database. Credentials, sessions, and caches are runtime state, outside this repo.
 
 After rebuilding changes to the executable or wrapper environment, restart the

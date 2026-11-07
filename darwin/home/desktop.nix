@@ -1,6 +1,15 @@
-{ lib, ... }:
+{ config, lib, ... }:
 {
-  # Host overrides live in home-manager.users.<user>.workstation.desktop.
+  # Host overrides live in home-manager.users.<user>.workstation.*.
+  options.workstation.ssh = {
+    keyFile = lib.mkOption {
+      # Intentionally no default: signing is mandated by git.nix, so every host
+      # must declare which personal key it owns (relative to the home
+      # directory, without the .pub suffix; the .pub file must exist).
+      type = lib.types.str;
+      description = "Path of the machine's SSH private key, relative to the home directory.";
+    };
+  };
   options.workstation.desktop = {
     networkInterface = lib.mkOption {
       type = lib.types.strMatching "[a-zA-Z][a-zA-Z0-9]*";

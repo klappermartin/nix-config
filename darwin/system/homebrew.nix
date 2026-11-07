@@ -29,12 +29,14 @@
     enable = true;
     # use taps declared by nix-homebrew
     taps = builtins.attrNames config.nix-homebrew.taps;
-    brews = [ ];
+    brews = [
+      "helm"
+    ];
     caskArgs = {
       require_sha = true;
     };
-    # Homebrew is exclusively declarative: zap removes ALL unlisted packages,
-    # including manual installs, and applies casks' associated-data cleanup rules.
+    # Leave unlisted Homebrew packages alone; IT or manual installations may
+    # share the Homebrew prefix on managed machines.
     # Prefer nixpkgs; Homebrew is only for macOS packaging/availability exceptions.
     casks =
       let
@@ -59,7 +61,7 @@
     masApps = { };
     onActivation = {
       autoUpdate = false;
-      cleanup = "zap";
+      cleanup = "none";
       # Recipes are lock-pinned. Unchecked vendor downloads and app self-updates
       # can still change independently; greedy casks may upgrade on any rebuild.
       upgrade = true;

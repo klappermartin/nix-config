@@ -1,6 +1,7 @@
 {
   imports = [
     ./jankyborders.nix
+    ./ollama.nix
     ./oss-references-pruner.nix
     ./sketchybar.nix
     ./skhd.nix

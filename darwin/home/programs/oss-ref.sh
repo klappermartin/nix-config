@@ -336,6 +336,73 @@ cmd_manifest() (
   exit "$failed"
 )
 
+# Escape fnmatch(3) metacharacters so a literal path can be used as a find
+# -lname pattern.
+fnmatch_escape() {
+  printf '%s' "$1" | sed 's/[][\\*?]/\\&/g'
+}
+
+# Record the clone referenced by each consumer symlink in the caller's
+# `referenced` array. "named" is the inverted fast path: patterns are built from
+# store entries, so only links whose stored target names a clone are
+# canonicalized. "all" resolves every link and is the safety fallback for any
+# candidate that the fast path could not confirm.
+scan_consumer_links() {
+  local mode="$1" candidate name escaped_candidate escaped_name
+  local consumer_root canonical link resolved unresolved relative clone
+  local -a match=()
+
+  if [[ "$mode" == named ]]; then
+    match=(-false)
+    for candidate in "${candidates[@]}"; do
+      name=$(basename -- "$candidate")
+      escaped_candidate=$(fnmatch_escape "$candidate")
+      escaped_name=$(fnmatch_escape "$name")
+      match+=(
+        -o -lname "$escaped_candidate"
+        -o -lname "$escaped_candidate/*"
+        -o -lname "*$escaped_name"
+        -o -lname "*$escaped_name/*"
+      )
+    done
+  fi
+
+  for consumer_root in "${roots[@]}"; do
+    log_info "Scanning ($mode): $consumer_root"
+    canonical=$(realpath -e -- "$consumer_root") || return 2
+    if [[ "$mode" == named ]]; then
+      if ! find "$canonical" -path "$root" -prune -o -type l \
+        \( "${match[@]}" \) -print0 > "$workdir/links"; then
+        log_err "incomplete consumer scan; refusing to prune: $consumer_root"
+        return 2
+      fi
+    elif ! find "$canonical" -path "$root" -prune -o -type l -print0 > "$workdir/links"; then
+      log_err "incomplete consumer scan; refusing to prune: $consumer_root"
+      return 2
+    fi
+    while IFS= read -r -d '' link; do
+      resolved=$(realpath -m -- "$link") || {
+        log_err "cannot resolve consumer link; refusing to prune: $link"
+        return 2
+      }
+      # An unresolved component means the link may still point into the store.
+      unresolved=$resolved
+      while [[ -n "$unresolved" && "$unresolved" != / ]]; do
+        if [[ -L "$unresolved" ]]; then
+          log_err "unresolved consumer symlink; refusing to prune: $link"
+          return 2
+        fi
+        unresolved=${unresolved%/*}
+      done
+      if [[ "$resolved" == "$root/"* ]]; then
+        relative=${resolved#"$root/"}
+        clone=${relative%%/*}
+        referenced["$root/$clone"]=1
+      fi
+    done < "$workdir/links"
+  done
+}
+
 cmd_prune() (
   local assume_yes=0 dry_run=0 min_age_min=0 verbose=0
 
@@ -381,43 +448,30 @@ cmd_prune() (
     exit 2
   fi
 
-  # A failed or incomplete scan must never be interpreted as absence of consumers.
-  local -A referenced=()
-  local consumer_root canonical link resolved relative clone unresolved
-  for consumer_root in "${roots[@]}"; do
-    log_info "Scanning: $consumer_root"
-    canonical=$(realpath -e -- "$consumer_root")
-    if ! find "$canonical" -path "$root" -prune -o -type l -print0 > "$workdir/links"; then
-      log_err "incomplete consumer scan; refusing to prune: $consumer_root"
-      exit 1
-    fi
-    while IFS= read -r -d '' link; do
-      # -m retains broken descendant links as references too; loops/errors abort.
-      resolved=$(realpath -m -- "$link") || {
-        log_err "cannot resolve consumer link; refusing to prune: $link"; exit 1;
-      }
-      # GNU realpath -m can return success for a loop, treating its unresolved
-      # components as missing. Any symlink left in the result means resolution
-      # was incomplete (including loops in an intermediate path component).
-      unresolved=$resolved
-      while [[ -n "$unresolved" && "$unresolved" != / ]]; do
-        if [[ -L "$unresolved" ]]; then
-          log_err "unresolved consumer symlink; refusing to prune: $link"
-          exit 1
-        fi
-        unresolved=${unresolved%/*}
-      done
-      if [[ "$resolved" == "$root/"* ]]; then
-        relative=${resolved#"$root/"}
-        clone=${relative%%/*}
-        referenced["$root/$clone"]=1
-      fi
-    done < "$workdir/links"
-  done
-
   if [[ ${#candidates[@]} -eq 0 ]]; then
     echo "nothing to prune"
     exit 0
+  fi
+
+  # Discovery is driven by the reference store: each candidate is checked for
+  # incoming consumer links. A failed or incomplete scan must never be
+  # interpreted as absence of consumers.
+  local -A referenced=()
+  local -a unresolved_candidates=()
+  local candidate
+  if ! scan_consumer_links named; then
+    exit 1
+  fi
+  for candidate in "${candidates[@]}"; do
+    [[ -n "${referenced[$candidate]+x}" ]] || unresolved_candidates+=("$candidate")
+  done
+
+  # The name filter is an optimization, not the safety boundary. Anything it
+  # could not confirm gets a full canonical scan before it can be pruned.
+  if [[ ${#unresolved_candidates[@]} -gt 0 ]]; then
+    if ! scan_consumer_links all; then
+      exit 1
+    fi
   fi
 
   # Finish all discovery/stat checks before deleting anything.

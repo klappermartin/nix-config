@@ -13,6 +13,7 @@
     bitwarden-desktop
     # ! Include codex and claude so codexbar can find their configurations
     claude-code
+    codebase-memory-mcp
     codex
     codexbar
     colima
@@ -36,6 +37,7 @@
     nodejs_22
     pnpm
     obsidian
+    ollama
     osu-lazer-bin
     procs
     pi-coding-agent

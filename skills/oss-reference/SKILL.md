@@ -91,7 +91,7 @@ oss-ref add https://github.com/Effect-TS/effect.git v4-beta ~/code/my-project/re
 
 **Signature:** `oss-ref prune [--yes|--dry-run] [--min-age <dur>] [-v]`
 
-Scans `$OSS_REFERENCES_ROOT` for directories matching `*@*` and checks whether any symlink under `$OSS_REFERENCES_CONSUMER_ROOTS` points to them or their descendants. Even broken links into a clone protect it. Missing/unreadable roots, discovery errors, and unresolvable symlink loops abort before deletion. Links inside the references store are not consumers. Unreferenced clones are candidates for deletion; `--min-age` skips directories modified more recently than the threshold.
+Walks `$OSS_REFERENCES_ROOT` entries matching `*@*` and checks each entry for incoming symlinks under `$OSS_REFERENCES_CONSUMER_ROOTS` that point to it or a descendant. Discovery is driven by the store entries rather than by collecting links and diffing: a name match on the stored link target is resolved directly, and any entry that remains unreferenced is confirmed with a full canonical scan before it can be pruned. Even broken links into a clone protect it. Missing/unreadable roots, discovery errors, and unresolvable symlink loops encountered during verification abort before deletion. Links inside the references store are not consumers. Unreferenced clones are candidates for deletion; `--min-age` skips directories modified more recently than the threshold.
 
 **Example:**
 
@@ -122,6 +122,29 @@ oss-ref list
 - `0` — success (or empty list)
 - `1` — runtime error
 - `2` — usage error (not applicable for this subcommand)
+
+## Codegraph indexing (optional)
+
+Index a reference checkout when you need symbol lookup or call-graph data for a
+dependency. Initialize the clone, not the aggregate references root: a root-level
+index would mix every repository and version into one project with duplicate
+symbols.
+
+```bash
+# Resolve through the consumer symlink so the clone root is indexed.
+codegraph init "$(realpath ~/code/my-project/repos/effect)"
+codegraph status "$(realpath ~/code/my-project/repos/effect)"
+codegraph sync "$(realpath ~/code/my-project/repos/effect)"
+```
+
+A consumer project's own Codegraph index does not follow the reference symlink:
+git lists the link itself, not files beneath its target. Query the reference
+index separately with the Codegraph MCP `projectPath` argument.
+
+The index lives in `.codegraph/` inside the clone. `oss-ref check` ignores
+untracked files, so the index does not cause drift, and `prune` removes the index
+together with an orphaned clone. Add `.codegraph/` to the clone's
+`.git/info/exclude` if you want `git status` there to stay clean.
 
 ## Filesystem layout
 

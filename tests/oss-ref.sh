@@ -160,6 +160,40 @@ expect_failure 1 run sync "$manifest"
 installed 1.1.0
 cp "$scratch/good.json" "$manifest"
 
+# Prune discovery is per store entry: links created by hand still protect their
+# clone even when relative, broken, pointing at a descendant, or going through
+# an alias that does not contain the clone name. Only the unlinked clone goes.
+mkdir -p \
+  "$OSS_REFERENCES_ROOT/orphan@1" \
+  "$OSS_REFERENCES_ROOT/relative@1" \
+  "$OSS_REFERENCES_ROOT/descendant@1/sub" \
+  "$OSS_REFERENCES_ROOT/broken@1" \
+  "$OSS_REFERENCES_ROOT/aliased@1" \
+  "$OSS_REFERENCES_ROOT/odd[1]@1"
+mkdir -p \
+  "$scratch/projects/relative/repos" \
+  "$scratch/projects/descendant/repos" \
+  "$scratch/projects/broken/repos" \
+  "$scratch/projects/aliased/repos" \
+  "$scratch/projects/odd/repos"
+ln -s "../../../store/relative@1" "$scratch/projects/relative/repos/link"
+ln -s "$OSS_REFERENCES_ROOT/descendant@1/sub" "$scratch/projects/descendant/repos/link"
+ln -s "$OSS_REFERENCES_ROOT/broken@1/missing" "$scratch/projects/broken/repos/link"
+ln -s "$OSS_REFERENCES_ROOT/aliased@1" "$scratch/alias-target"
+ln -s "$scratch/alias-target" "$scratch/projects/aliased/repos/link"
+ln -s "$OSS_REFERENCES_ROOT/odd[1]@1" "$scratch/projects/odd/repos/link"
+
+run prune --dry-run > "$scratch/prune.out"
+grep -qx 'orphan@1  orphan' "$scratch/prune.out" || fail "orphan was not reported"
+for protected in relative@1 descendant@1 broken@1 aliased@1 'odd[1]@1'; do
+  grep -qF "$protected" "$scratch/prune.out" && fail "$protected was reported as orphan"
+done
+run prune --yes
+[[ ! -e "$OSS_REFERENCES_ROOT/orphan@1" ]] || fail "prune kept the orphan"
+for protected in relative@1 descendant@1 broken@1 aliased@1 'odd[1]@1'; do
+  [[ -d "$OSS_REFERENCES_ROOT/$protected" ]] || fail "prune removed $protected"
+done
+
 # Existing add/prune behavior still respects consumers and the shared lock.
 mkdir "$OSS_REFERENCES_ROOT/.lock"
 expect_failure 1 run sync "$manifest"

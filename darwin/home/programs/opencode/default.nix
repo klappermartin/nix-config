@@ -105,6 +105,8 @@ in
     agents.librarian = ./agents/librarian.md;
     skills = {
       ast-grep = ./vendor/skills/ast-grep;
+      data-scientist = ./vendor/skills/data-scientist;
+      eval-integrity = ./vendor/skills/eval-integrity;
       git-master = ./vendor/skills/git-master;
       lsp-setup = ./vendor/skills/lsp-setup;
       oss-reference = ../../../../skills/oss-reference;

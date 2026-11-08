@@ -16,4 +16,6 @@ python3Packages.buildPythonApplication {
   postFixup = ''
     wrapProgram "$out/bin/oss-ref" --prefix PATH : ${lib.makeBinPath [ git ]}
   '';
+
+  meta.mainProgram = "oss-ref";
 }

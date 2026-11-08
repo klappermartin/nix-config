@@ -2,10 +2,15 @@
 
 How to run the engines on each surface, and when to escalate between them.
 
+> **Standalone OpenCode policy:** use the active project's declared environment first. In a
+> devenv project, prefix commands in this page with `devenv shell`. When it lacks a required
+> tool, use an ephemeral `nix shell` with the exact package set instead of installing anything
+> globally. Do not run the bundled dependency installers or `uv --with` automatically.
+
 ## Persistent kernel, JavaScript (Bun)
 
-One-time setup per machine — the bundled script installs `@duckdb/node-api` into a user-level
-cache outside any repo and prints the absolute import path (its only stdout line):
+Use this only when the active project environment already declares `@duckdb/node-api`. The
+bundled installer is for explicitly approved ad-hoc environments, not routine skill use:
 
 ```bash
 bash scripts/ensure-js-deps.sh          # run from the skill directory
@@ -32,9 +37,10 @@ reader.getRowObjects();                  // array of plain row objects
 
 ## Persistent kernel, Python (the default Python surface)
 
-duckdb, numpy, and matplotlib are typically resident — import and use them directly.
-Polars and pyarrow rarely ship with a kernel, so inject them once per session (run from the
-skill directory; the script installs on first use, then just prints the path):
+When DuckDB, NumPy, Matplotlib, Polars, or PyArrow are declared in the active environment,
+import and use them directly. Do not inject missing packages into a user cache during routine
+skill use; use an ephemeral Nix environment with the required Python packages instead. The
+following installer example is only for an explicitly approved persistent setup:
 
 ```python
 import subprocess, sys
@@ -56,13 +62,13 @@ import pyarrow
 - matplotlib figures render natively in kernels that display rich output; also save a PNG so
   the artifact survives the session.
 
-## uv lane (fallback and isolation)
+## uv lane (explicit ad-hoc fallback and isolation)
 
 ```bash
 uv run --with duckdb --with polars --with pyarrow --with numpy python -c "<code>"
 ```
 
-- Reach for it when there is no kernel, or when a heavy, crash-prone one-shot should not
+- Reach for it only with explicit approval when there is no kernel, or when a heavy, crash-prone one-shot should not
   run inside (and possibly take down) the kernel.
 - Include exactly the packages the code imports, plus pyarrow whenever `.pl()` is used.
 - Each invocation pays process spawn plus imports (roughly 0.3s warm) and re-reads its inputs —
@@ -71,7 +77,8 @@ uv run --with duckdb --with polars --with pyarrow --with numpy python -c "<code>
 
 ## No kernel at all
 
-Same engines, one process per batch of questions:
+Use project-declared engines, one process per batch of questions. In a devenv project, run the
+command as `devenv shell <command>`:
 
 ```bash
 bun -e '<the JavaScript kernel pattern above>'         # DuckDB via @duckdb/node-api
@@ -83,8 +90,8 @@ uv run scripts/quick-query.py data.csv "SELECT ..."    # zero-code CLI fallback
 
 Start on the resident kernel. Move a step down when a concrete need appears:
 
-- polars/pyarrow missing from the kernel — inject via `ensure-py-deps.sh` (above), not a
-  uv one-shot.
+- polars/pyarrow missing from the kernel — use an ephemeral Nix environment with those
+  packages. Do not inject them into a user cache.
 - Crash-prone or memory-hungry one-shot that should not take the kernel down — uv lane.
 - No kernel on this harness — one-shot recipes above.
 - Data lives remotely or exceeds local RAM — read `placement.md` and move the query, not

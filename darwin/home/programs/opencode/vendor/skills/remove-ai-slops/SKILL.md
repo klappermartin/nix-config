@@ -6,6 +6,23 @@ argument-hint: "[file ...]"
 
 # Remove AI Slops Skill
 
+## Project environment first
+
+Run the project's test, lint, typecheck, and helper commands in its declared environment. Resolve
+the execution environment in this order:
+
+1. Use tools already on `PATH` when they belong to the active project environment.
+2. In a repository with `devenv.nix` or `devenv.yaml`, run commands through devenv, for example
+   `devenv shell bun test`, `devenv shell npm test`, or `devenv shell python3 -m pytest`.
+3. If the project environment lacks a required tool, use an ephemeral `nix shell` with the exact
+   package set required for that command. This does not install anything globally or modify the
+   project.
+
+Do not automatically use `npm install -g`, `bun add -g`, `pip install`, `uv tool install`, or
+other global or persistent installers. The environment rule takes precedence over tool examples
+elsewhere in this skill, including the `bun` commands used for test-junk detection and mutation
+proofs.
+
 ## Inputs
 
 - **Default scope**: branch diff vs `merge-base main` (no arguments needed)

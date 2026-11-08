@@ -11,6 +11,24 @@ This skill ships a Python wrapper at `scripts/ast_grep_helper.py` and platform i
 
 ---
 
+## Project environment first
+
+The `python3` examples below assume the active project environment provides Python. Resolve it
+in this order:
+
+1. Use `python3` already available on `PATH` from the active project environment.
+2. In a repository with `devenv.nix` or `devenv.yaml`, use its declared interpreter, for example
+   `devenv shell python3 <skill-dir>/scripts/ast_grep_helper.py doctor`.
+3. If neither is available, use an ephemeral Nix environment:
+   `nix shell nixpkgs#python3 nixpkgs#ast-grep --command python3
+   <skill-dir>/scripts/ast_grep_helper.py doctor`. This does not install anything globally.
+
+Likewise, prefer a project-declared `ast-grep` package. The bundled installer and the global
+installation commands in `references/install.md` are opt-in only; do not run them unless the
+user explicitly asks for a persistent installation.
+
+---
+
 ## OmO native: the ast-grep MCP tools (fastest path, no CLI needed)
 
 OmO native also registers a bundled ast-grep MCP server. Its three tools are **deferred**: they are absent from the resident tool list and activate automatically the first time you call them by name — no `tool_search` round trip needed.

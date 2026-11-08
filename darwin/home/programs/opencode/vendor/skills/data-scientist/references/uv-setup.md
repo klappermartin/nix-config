@@ -1,6 +1,9 @@
-# uv Setup — Per-Platform
+# uv Setup — Explicit Ad-hoc Environments
 
-This skill's uv lane (kernel-less harnesses, isolated one-shots) runs through `uv run --with ...`, and `scripts/ensure-py-deps.sh` uses uv as its installer. If `uv --version` fails, set uv up with the automated scripts or the manual commands below, then verify.
+This page is only for an explicitly approved persistent or uv-specific setup. In normal use,
+start with the active project's environment (for example, `devenv.nix`), then use an ephemeral
+`nix shell` with the required packages when it lacks a tool. Do not use these installers or
+global PATH changes as an automatic fallback.
 
 ## Automated (recommended)
 

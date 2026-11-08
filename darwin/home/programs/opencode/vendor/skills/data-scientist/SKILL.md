@@ -8,6 +8,26 @@ description: "Processes and analyzes data with resident-kernel engines (DuckDB, 
 Answer data questions through the cheapest engine and surface that can prove the answer, and
 decide where the computation should live before touching the data.
 
+## Project environment first
+
+Never install Python, `uv`, or data packages globally to run this skill. Resolve an execution
+environment in this order:
+
+1. Use the interpreter and tools already on `PATH` when they belong to the active project
+   environment.
+2. In a repository with `devenv.nix` or `devenv.yaml`, run commands through its declared
+   environment, for example `devenv shell python3 path/to/script.py` or
+   `devenv shell uv run path/to/script.py`.
+3. If the project environment lacks a required tool or library, run the required command in an
+   ephemeral `nix shell`. For Python data work, use `nix shell nixpkgs#python3
+   nixpkgs#python3Packages.duckdb nixpkgs#python3Packages.polars
+   nixpkgs#python3Packages.pyarrow nixpkgs#python3Packages.numpy --command python3 ...`.
+   This does not install anything globally or modify the project.
+
+Do not automatically use `uv --with`, `uv tool install`, `pip install`, or either `setup-uv`
+script. The environment rule takes precedence over installer and one-shot examples in this
+skill's references.
+
 ## Execution surfaces: resident kernel first
 
 A persistent REPL/eval kernel (many harnesses expose one for JavaScript and Python) is the
@@ -16,18 +36,15 @@ overhead and re-scans the input file, while a resident connection amortizes both
 one-time load, repeat queries return in milliseconds. Exploration is repeat queries, so this
 difference dominates the session.
 
-1. **JavaScript kernel (Bun)**: run `scripts/ensure-js-deps.sh` once; it prints the absolute
-   import path for `@duckdb/node-api`. Dynamic-import it, connect once, query across cells.
-2. **Python kernel**: the default surface for Python work. duckdb/numpy/matplotlib are
-   typically resident; Polars and pyarrow come from `scripts/ensure-py-deps.sh`, which
-   installs them once into a user cache keyed to the kernel's interpreter —
-   `sys.path.insert` the printed directory and import. The interpreter itself is never
-   mutated.
-3. **uv lane** (`uv run --with ...`): isolation for a heavy or crash-prone one-shot that
-   should not take the kernel down.
-4. **No kernel** (plain-shell harness): the same engines as one-shots — `bun -e` for
-   DuckDB-js, `uv run python -c` for the Python stack — batching several questions per
-   process.
+1. **JavaScript kernel (Bun)**: use it when the active project environment already provides
+   `@duckdb/node-api`; dynamic-import it, connect once, query across cells.
+2. **Python kernel**: the default Python surface when its project environment provides the
+   needed libraries. Use DuckDB/Polars/Arrow directly; use the Nix fallback rather than
+   injecting missing packages into a user cache.
+3. **Project-provided uv lane** (`devenv shell uv run ...`): isolation for a heavy or
+   crash-prone one-shot that should not take the kernel down.
+4. **No kernel**: run a declared project command through devenv, batching several questions per
+   process. If no project environment declares a suitable engine, use the Nix fallback above.
 
 Per-surface patterns and pitfalls: read `references/execution-surfaces.md` before first use.
 
@@ -37,7 +54,7 @@ Per-surface patterns and pitfalls: read `references/execution-surfaces.md` befor
   window functions. It queries CSV/Parquet/JSON in place without loading, spills to disk
   past its memory limit, and reads remote files with the same syntax.
 - **Polars** when the pipeline is DataFrame-shaped: expression-chain transforms, reshapes,
-  streaming datasets past RAM — resident in the Python kernel via `ensure-py-deps.sh`.
+  streaming datasets past RAM — provided by the active Python environment.
   Read `references/polars-lane.md` — the current 1.x API differs from widely-memorized
   older spellings.
 - **numpy** when numeric work goes beyond SQL/DataFrame aggregation: statistical tests,
@@ -96,10 +113,10 @@ follow `references/visualization.md` including its visual QA step.
 | `references/polars-lane.md` | DataFrame-shaped pipeline or data past RAM: current API, Arrow handoff, package sets |
 | `references/placement.md` | before heavy or remote work: sizing probe, memory limits, remote reads |
 | `references/visualization.md` | before any chart: type selection, quality bar, CJK fonts, visual QA |
-| `references/uv-setup.md` | uv missing or broken on this machine |
+| `references/uv-setup.md` | an explicitly approved ad-hoc uv environment |
 
 ## CLI fallback
 
-When no kernel or REPL surface exists, `uv run scripts/quick-query.py <file> [SQL]`
-(`--filter <polars-sql-expr>`, `--describe`) answers ad-hoc questions with zero code.
-Supports CSV, Parquet, JSON, NDJSON.
+When no kernel or REPL surface exists, run `quick-query.py` through the declared project
+environment or an ephemeral Nix environment containing `python3`, `duckdb`, `polars`, `pyarrow`,
+`numpy`, `typer`, and `rich`. The CLI supports CSV, Parquet, JSON, NDJSON.

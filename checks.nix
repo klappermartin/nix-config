@@ -4,6 +4,10 @@
   pkgs,
   self,
 }:
+let
+  ossRefSources = import ./darwin/home/programs/oss-ref/sources.nix;
+  ossRefSourcePaths = builtins.concatStringsSep " " (map toString ossRefSources);
+in
 {
   oss-references =
     pkgs.runCommand "oss-references-tests"
@@ -20,8 +24,11 @@
         ];
       }
       ''
-        shellcheck ${./darwin/home/programs/oss-ref.sh} ${./tests/oss-ref.sh}
-        bash ${./tests/oss-ref.sh} ${./darwin/home/programs/oss-ref.sh}
+        script="$TMPDIR/oss-ref.sh"
+        cat ${ossRefSourcePaths} > "$script"
+        shellcheck "$script" ${./tests/oss-ref.sh}
+        bash ${./tests/oss-ref.sh} "$script"
+        OSS_REF_SOURCE_ROOT=${./.} bash ${./tests/oss-ref.sh}
         touch "$out"
       '';
 

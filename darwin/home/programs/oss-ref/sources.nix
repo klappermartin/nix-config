@@ -1,0 +1,13 @@
+[
+  ./lib/config.sh
+  ./lib/log.sh
+  ./lib/paths.sh
+  ./lib/operation.sh
+  ./lib/consumers.sh
+  ./lib/git.sh
+  ./commands/list.sh
+  ./commands/add.sh
+  ./commands/manifest.sh
+  ./commands/prune.sh
+  ./main.sh
+]

@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-script=$(realpath -e -- "${1:-$(dirname -- "$0")/../darwin/home/programs/oss-ref.sh}")
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/oss-ref-test.XXXXXX")
 trap 'rm -rf -- "$scratch"' EXIT
+source_root=$(realpath -e -- "${OSS_REF_SOURCE_ROOT:-$(dirname -- "$0")/..}")
+
+if [[ $# -gt 0 ]]; then
+  script=$(realpath -e -- "$1")
+else
+  script="$scratch/oss-ref.sh"
+  cat \
+    "$source_root/darwin/home/programs/oss-ref/lib/config.sh" \
+    "$source_root/darwin/home/programs/oss-ref/lib/log.sh" \
+    "$source_root/darwin/home/programs/oss-ref/lib/paths.sh" \
+    "$source_root/darwin/home/programs/oss-ref/lib/operation.sh" \
+    "$source_root/darwin/home/programs/oss-ref/lib/consumers.sh" \
+    "$source_root/darwin/home/programs/oss-ref/lib/git.sh" \
+    "$source_root/darwin/home/programs/oss-ref/commands/list.sh" \
+    "$source_root/darwin/home/programs/oss-ref/commands/add.sh" \
+    "$source_root/darwin/home/programs/oss-ref/commands/manifest.sh" \
+    "$source_root/darwin/home/programs/oss-ref/commands/prune.sh" \
+    "$source_root/darwin/home/programs/oss-ref/main.sh" > "$script"
+fi
 export HOME="$scratch/home"
 export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
 export GIT_TERMINAL_PROMPT=0

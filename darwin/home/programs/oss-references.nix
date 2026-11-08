@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.programs.oss-references;
+  ossRefSources = import ./oss-ref/sources.nix;
   ossRef = pkgs.writeShellApplication {
     name = "oss-ref";
     runtimeInputs = [
@@ -16,7 +17,9 @@ let
       pkgs.gnused
       pkgs.jq
     ];
-    text = builtins.readFile ./oss-ref.sh;
+    # Keep the installed command self-contained while keeping its source split
+    # into focused, independently reviewable Bash modules.
+    text = builtins.concatStringsSep "\n\n" (map builtins.readFile ossRefSources);
   };
 in
 {
@@ -25,7 +28,7 @@ in
     package = lib.mkOption {
       type = lib.types.package;
       default = ossRef;
-      defaultText = lib.literalExpression "oss-ref built from ./oss-ref.sh";
+      defaultText = lib.literalExpression "oss-ref assembled from ./oss-ref/ modules";
       description = "The oss-ref package.";
     };
     root = lib.mkOption {

@@ -1,0 +1,1 @@
+upstream: https://github.com/code-yeongyu/oh-my-openagent @ 8af3fae18874e823508d90e0b729d6b2848458ca. License: ../oh-my-openagent-LICENSE.md. The upstream security-review alias invokes team-mode security-research; this local adaptation preserves its evidence standard while keeping review single-session by default.

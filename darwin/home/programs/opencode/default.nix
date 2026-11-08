@@ -112,9 +112,12 @@ in
       oss-reference = ../../../../skills/oss-reference;
       playwright = ./skills/playwright;
       remove-ai-slops = ./vendor/skills/remove-ai-slops;
+      security-review = ./vendor/skills/security-review;
       visual-qa = ./vendor/skills/visual-qa;
     };
   };
+
+  xdg.configFile."opencode/commands/handoff.md".source = ./commands/handoff.md;
 
   home.packages = [
     codegraph

@@ -1,0 +1,1 @@
+upstream: https://github.com/code-yeongyu/oh-my-openagent (`packages/shared-skills/skills/remove-ai-slops/SKILL.md`). License: ../oh-my-openagent-LICENSE.md. Vendored with local devenv-first execution-policy amendments.

@@ -5,6 +5,9 @@
   ...
 }:
 let
+  # The M2 keeps its existing Anthropic authentication flow. The company M5
+  # explicitly removes this plugin in modules/darwin/home/company-opencode.nix.
+  anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
   opencodeV2Version = "2.0.24";
   codegraphVersion = "1.6.2";
   effectMcpVersion = "0.1.16";
@@ -68,14 +71,11 @@ let
     runtimeInputs = [
       pkgs.ripgrep
       pkgs.mcp-nixos
-      pkgs.codebase-memory-mcp
       effectMcp
       firefoxMcp
     ];
     runtimeEnv = {
       OPENCODE_DISABLE_AUTOUPDATE = "1";
-      # Use the original database so sessions and credentials remain unified.
-      OPENCODE_DB = "opencode.db";
     };
     text = ''exec ${opencodeV2Bundle}/bin/opencode "$@"'';
   };
@@ -100,11 +100,8 @@ in
     enable = true;
     package = opencodeV2;
     settings = {
+      plugins = [ anthropicAuthPluginV2 ];
       mcp.servers = {
-        codebase_memory = {
-          type = "local";
-          command = [ (lib.getExe pkgs.codebase-memory-mcp) ];
-        };
         codegraph = {
           type = "local";
           command = [
@@ -139,37 +136,6 @@ in
           url = "https://mcp.exa.ai/mcp?tools=web_search_exa";
         };
       };
-
-      # Local engines (V2 config shape: providers.*). Ollama is auto-discovered
-      # at 127.0.0.1:11434; ds4 exposes an OpenAI-compatible endpoint but has to
-      # be declared explicitly. Keep `limit.context` in sync with ds4-server --ctx.
-      providers.ds4 = {
-        name = "DwarfStar (local)";
-        package = "@opencode/ai/providers/openai-compatible";
-        settings = {
-          baseURL = "http://127.0.0.1:8000/v1";
-          apiKey = "dsv4-local";
-          # Streamed 284B prefill can take minutes before the first chunk.
-          headerTimeout = 1800000;
-          chunkTimeout = false;
-        };
-        models."deepseek-v4-flash" = {
-          name = "DwarfStar Flash";
-          compatibility = {
-            maxTokensField = "max_tokens";
-            reasoningField = "reasoning_content";
-          };
-          capabilities = {
-            tools = true;
-            input = [ "text" ];
-            output = [ "text" ];
-          };
-          limit = {
-            context = 32768;
-            output = 8192;
-          };
-        };
-      };
     };
     agents.librarian = ./agents/librarian.md;
     skills = {
@@ -178,6 +144,7 @@ in
       lsp-setup = ./vendor/skills/lsp-setup;
       oss-reference = ../../../../skills/oss-reference;
       playwright = ./skills/playwright;
+      remove-ai-slops = ./vendor/skills/remove-ai-slops;
       visual-qa = ./vendor/skills/visual-qa;
     };
   };

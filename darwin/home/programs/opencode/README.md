@@ -8,7 +8,6 @@ server, and a small baseline of skills.
 | Scope | Servers |
 | --- | --- |
 | Global | Codebase Memory, Codegraph, Context7, grep.app, LSP, Exa web search, Linear, local Figma |
-| This repository | NixOS MCP, enabled by [`.opencode/opencode.json`](../../../../.opencode/opencode.json) |
 | Installed, enabled only by projects | `mcp-nixos`, `effect-mcp`, `firefox-devtools-mcp` |
 
 Installing a server does not enable it. Global configuration lives in

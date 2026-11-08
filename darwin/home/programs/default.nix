@@ -4,11 +4,8 @@
 }:
 {
   imports = [
-    ./firefox.nix
-    ./git.nix
     ./ghostty.nix
     ./kitty.nix
-    ./mpv.nix
     ./opencode
     ./oss-references.nix
     ./oxker.nix

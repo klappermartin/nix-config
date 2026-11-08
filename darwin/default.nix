@@ -1,11 +1,11 @@
 { inputs, ... }:
 {
   imports = [
-    ./system/configuration.nix
-    ./system/overlays.nix
+    ../modules/common/nix.nix
+    ../modules/darwin/system/configuration.nix
+    ../modules/darwin/system/overlays.nix
     inputs.nix-homebrew.darwinModules.nix-homebrew
-    ./system/homebrew.nix
     inputs.home-manager.darwinModules.home-manager
-    ./system/home-manager.nix
+    ../modules/darwin/system/home-manager.nix
   ];
 }

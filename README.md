@@ -90,16 +90,36 @@ separate platform/OS composition, not an M-series chip-name conditional.
 ## Configuration Structure
 
 - `flake.nix` - Main entry point and input definitions
-- `hosts/mb-pro/`, `hosts/mb-pro-m5/` - Thin host identity/platform layers
-- `darwin/default.nix` - Shared, explicit Darwin module composition
-- `darwin/system/configuration.nix` - System-wide macOS settings
-- `darwin/system/homebrew.nix` - Homebrew (nix-homebrew taps + casks) and Rosetta
-- `darwin/system/home-manager.nix` - home-manager wiring
-- `darwin/system/overlays.nix` - nixpkgs overlays (NUR, package pins)
-- `darwin/home/home.nix` - User-specific configurations
+- `hosts/mb-pro/`, `hosts/mb-pro-m5/` - Host identity and explicit system/Home Manager imports
+- `darwin/default.nix` - Shared Darwin module composition
+- `modules/common/` - Shared OS-independent Nix settings
+- `modules/darwin/system/` - System-wide macOS settings, overlays and Home Manager wiring
+- `modules/darwin/homebrew/` - Shared Homebrew setup and separate host policies
+- `modules/darwin/home.nix` - Darwin-specific Home Manager composition and integration
+- `modules/home/` - Portable Home Manager features, including Firefox and Git
+- `darwin/home/` - Existing Darwin-specific applications, services and desktop setup
 - `darwin/home/desktop.nix` - Host-overridable desktop settings
 - `darwin/home/sketchybar/` - Status bar Lua configuration
 - `darwin/home/programs/opencode/` - OpenCode packages and global configuration
+
+Each host selects optional system modules in `default.nix` and user modules in
+`home.nix`. Add a feature as an importable module and opt in explicitly; use a
+custom option only for a value shared feature implementations need, such as the
+per-host SSH key. Tailscale is currently selected only by `mb-pro`. The M2
+personal profile and M5 company profile select distinct Firefox, OpenCode, and
+local-AI features; the common Firefox extension list is factored into
+`modules/home/programs/firefox/extensions.nix`.
+
+Darwin packages are grouped under `modules/darwin/packages/` by purpose. Both
+hosts import programming, productivity, communication, and other tools; the M2
+alone imports gaming. Homebrew productivity and entertainment casks are shared;
+gaming casks are personal-only.
+
+Home Manager remains the user-configuration layer, but `modules/home/base.nix`
+is evaluated on Linux as well as Darwin. A future NixOS host can use
+`home-manager.nixosModules.home-manager` and import these portable modules in
+its own user configuration. The remaining `darwin/home/` modules have not been
+certified portable and should be extracted individually when needed.
 
 ## Maintenance
 
@@ -157,9 +177,10 @@ Window-management configuration draws from [FelixKratz's dotfiles](https://githu
 
 ### Homebrew Applications
 - Prefer nixpkgs; Homebrew handles macOS availability/packaging exceptions.
-- Homebrew cleanup is disabled (`none`), so unlisted packages remain installed.
+- Both hosts select their own Homebrew inventory and cleanup policy. Cleanup is
+  currently disabled (`none`) on both, so unlisted packages remain installed.
   Declared casks are still installed/upgraded during activation; this is not an
-  IT app allowlist. See `darwin/system/homebrew.nix` before changing ownership.
+  IT app allowlist. See `modules/darwin/homebrew/` before changing ownership.
 - Tap recipes are pinned by `flake.lock`. Checksum-free vendor downloads,
   application self-updaters, and greedy casks can still change independently.
 

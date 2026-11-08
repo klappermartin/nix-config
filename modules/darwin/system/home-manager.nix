@@ -1,7 +1,6 @@
 {
   pkgs,
   inputs,
-  username,
   ...
 }:
 {
@@ -12,7 +11,6 @@
 
     useGlobalPkgs = true;
     useUserPackages = true;
-    users.${username} = ../home/home.nix;
     backupCommand = "${
       pkgs.writeShellApplication {
         name = "home-manager-backup";

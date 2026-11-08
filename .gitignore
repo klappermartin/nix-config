@@ -19,4 +19,8 @@ result
 .sisyphus
 .codegraph
 
+# Local review and research artifacts
+/reports/
+/research_notes/
+
 .zed

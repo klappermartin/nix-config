@@ -6,8 +6,6 @@
   programs.firefox = {
     enable = true;
     package = pkgs.firefox-devedition;
-    # bundle id of the nixpkgs build, used for policies via `defaults`
-    darwinDefaultsId = "org.nixos.firefoxdeveloperedition.plist";
     languagePacks = [
       "en-US"
       "de"
@@ -220,30 +218,6 @@
           };
         };
 
-        # TODO: Persist extension configs separately
-        extensions = {
-          packages = with pkgs.nur.repos.rycee.firefox-addons; [
-            bitwarden
-            canvasblocker
-            darkreader
-            dearrow
-            decentraleyes
-            ff2mpv
-            privacy-badger
-            react-devtools
-            reduxdevtools
-            sponsorblock
-            tokyo-night-v2
-            ublock-origin
-            user-agent-string-switcher
-            to-deepl
-            link-cleaner
-            youtube-recommended-videos
-            # epub-reader
-            # gql network inspector
-          ];
-          # TODO: Extension settings
-        };
       };
     };
   };

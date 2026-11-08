@@ -161,17 +161,4 @@ in
     };
   };
 
-  # The key's passphrase lives in the keychain (UseKeychain in ~/.ssh/config), but
-  # the agent starts empty after login; without this, signing fails until the first ssh.
-  launchd.agents.ssh-add-keychain = {
-    enable = true;
-    config = {
-      ProgramArguments = [
-        "/usr/bin/ssh-add"
-        "--apple-load-keychain"
-        "-q"
-      ];
-      RunAtLoad = true;
-    };
-  };
 }

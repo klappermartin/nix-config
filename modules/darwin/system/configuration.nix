@@ -17,22 +17,9 @@
     ];
   };
 
-  nix.settings.experimental-features = "nix-command flakes";
-  # merged with nix-darwin's default (cache.nixos.org)
-  nix.settings.substituters = [
-    # devenv cache
-    "https://devenv.cachix.org"
-  ];
-  nix.settings.trusted-public-keys = [
-    # devenv cache
-    "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
-  ];
-
   nixpkgs = {
     config.allowUnfree = true;
   };
-
-  nix.optimise.automatic = true;
 
   programs = {
     # runs `nh clean all` as root, so system generations are collected too
@@ -60,11 +47,6 @@
       enable = true;
       package = pkgs.sketchybar;
       extraPackages = [ pkgs.jq ];
-    };
-
-    tailscale = {
-      enable = false;
-      # extraDaemonFlags = [ "--no-logs-no-support" ];
     };
 
     yabai = {

@@ -91,7 +91,7 @@ oss-ref add https://github.com/Effect-TS/effect.git v4-beta ~/code/my-project/re
 
 **Signature:** `oss-ref prune [--yes|--dry-run] [--min-age <dur>] [-v]`
 
-Walks `$OSS_REFERENCES_ROOT` entries matching `*@*` and checks each entry for incoming symlinks under `$OSS_REFERENCES_CONSUMER_ROOTS` that point to it or a descendant. Discovery is driven by the store entries rather than by collecting links and diffing: a name match on the stored link target is resolved directly, and any entry that remains unreferenced is confirmed with a full canonical scan before it can be pruned. Even broken links into a clone protect it. Missing/unreadable roots, discovery errors, and unresolvable symlink loops encountered during verification abort before deletion. Links inside the references store are not consumers. Unreferenced clones are candidates for deletion; `--min-age` skips directories modified more recently than the threshold.
+Walks `$OSS_REFERENCES_ROOT` entries matching `*@*` and performs a full canonical scan of symlinks under `$OSS_REFERENCES_CONSUMER_ROOTS`. Links that point to a clone or one of its descendants protect that clone; even broken links into a clone protect it. Missing/unreadable roots, discovery errors, and unresolvable symlink loops encountered during verification abort before deletion. Links inside the references store are not consumers. Unreferenced clones are candidates for deletion; `--min-age` skips directories modified more recently than the threshold.
 
 **Example:**
 

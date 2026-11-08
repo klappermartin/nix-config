@@ -5,30 +5,31 @@
   self,
 }:
 let
-  ossRefSources = import ./darwin/home/programs/oss-ref/sources.nix;
-  ossRefSourcePaths = builtins.concatStringsSep " " (map toString ossRefSources);
+  ossRef = pkgs.callPackage ./darwin/home/programs/oss-ref/package.nix { };
 in
 {
   oss-references =
     pkgs.runCommand "oss-references-tests"
       {
         nativeBuildInputs = with pkgs; [
-          bash
           git
-          coreutils
-          findutils
-          gnugrep
-          gnused
-          jq
-          shellcheck
+          basedpyright
+          python3Packages.pytest
+          python3Packages.radon
+          python3Packages.vulture
+          refurb
+          ruff
+          ossRef
         ];
       }
       ''
-        script="$TMPDIR/oss-ref.sh"
-        cat ${ossRefSourcePaths} > "$script"
-        shellcheck "$script" ${./tests/oss-ref.sh}
-        bash ${./tests/oss-ref.sh} "$script"
-        OSS_REF_SOURCE_ROOT=${./.} bash ${./tests/oss-ref.sh}
+        cd ${./.}
+        ruff check --no-cache darwin/home/programs/oss-ref/oss_ref tests/oss_ref
+        refurb darwin/home/programs/oss-ref/oss_ref tests/oss_ref -- --cache-dir "$TMPDIR/mypy-cache"
+        basedpyright ${./darwin/home/programs/oss-ref}
+        vulture darwin/home/programs/oss-ref/oss_ref --min-confidence 100
+        radon cc --min B --show-complexity darwin/home/programs/oss-ref/oss_ref
+        OSS_REF_BIN=${ossRef}/bin/oss-ref pytest -p no:cacheprovider ${./tests/oss_ref}
         touch "$out"
       '';
 

@@ -203,6 +203,10 @@ manifests, missing tags and checkout drift:
 nix build .#checks.aarch64-darwin.oss-references
 ```
 
+The command is a typed Python application using only the Python standard
+library at runtime; Nix supplies its interpreter and Git. Pyright and pytest
+are development/check dependencies, not user-managed installations.
+
 Key environment variables: `OSS_REFERENCES_ROOT` (default: `~/code/others/oss-references`) and `OSS_REFERENCES_CONSUMER_ROOTS` (default: `~/code`).
 
 All consumers must be discoverable under those roots. Pruning walks the store

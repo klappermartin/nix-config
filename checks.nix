@@ -32,6 +32,19 @@ in
         touch "$out"
       '';
 
+  opencode-config =
+    pkgs.runCommand "opencode-config-tests"
+      {
+        nativeBuildInputs = with pkgs; [
+          bash
+          gnugrep
+        ];
+      }
+      ''
+        bash ${./tests/opencode-config.sh} ${./.}
+        touch "$out"
+      '';
+
   # Force every host's system evaluation without realizing its whole closure.
   host-evaluation = pkgs.writeText "darwin-host-evaluation.json" (
     builtins.toJSON (

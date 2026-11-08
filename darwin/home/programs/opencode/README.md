@@ -8,21 +8,21 @@ server, and a small baseline of skills.
 | Scope | Servers |
 | --- | --- |
 | Global | Codebase Memory, Codegraph, Context7, grep.app, LSP, Exa web search, Linear, local Figma |
-| Installed, enabled only by projects | `mcp-nixos`, `effect-mcp`, `firefox-devtools-mcp` |
+| Installed, enabled only by projects | `mcp-nixos`, `firefox-devtools-mcp` |
 
 Installing a server does not enable it. Global configuration lives in
 `~/.config/opencode/opencode.json`; project connections belong in the project's
 `.opencode/opencode.json` or `opencode.jsonc`. OpenCode applies the configuration
 for each project even though clients share a background service.
 
-For example, a web project using Effect can opt in with:
+For example, a web project can opt in to the NixOS and Firefox MCPs with:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "servers": {
-      "effect": { "type": "local", "command": ["effect-mcp"] },
+      "nixos": { "type": "local", "command": ["mcp-nixos"] },
       "firefox": { "type": "local", "command": ["firefox-devtools-mcp"] }
     }
   }
@@ -38,8 +38,7 @@ local desktop MCP endpoint at `http://127.0.0.1:3845/mcp`.
 The Firefox wrapper selects Firefox Developer Edition and enables page script
 evaluation/debugging. Firefox launches on the first browser tool call, using a
 temporary automation profile. MCP-NixOS provides package, Home Manager, and
-nix-darwin option lookup. Effect MCP fetches/caches its documentation at runtime;
-match documentation to the project's Effect version.
+nix-darwin option lookup.
 
 ## Skills and language servers
 
@@ -63,9 +62,9 @@ LSP configuration.
 
 ## Versions and service
 
-OpenCode and Effect MCP use versioned npm bundles with fixed hashes in
-`default.nix`; Codebase Memory, Firefox DevTools, MCP-NixOS, and the TypeScript
-language server follow `flake.lock`. The OpenCode wrapper disables self-update.
+OpenCode, Codegraph, Codebase Memory, Firefox DevTools, MCP-NixOS, and the
+TypeScript language server follow the flake's nixpkgs revision. The OpenCode
+wrapper disables self-update.
 
 Keep `OPENCODE_DB=opencode.db`: it selects the unified session/authentication
 database. Credentials, sessions, and caches are runtime state, outside this repo.
@@ -83,8 +82,7 @@ switching its configured MCPs and skills.
 
 ## Codegraph
 
-The Codegraph executable is pinned by version/hash, with telemetry disabled and
-`.devenv/` and `devenv/` added to its default exclusions.
+Codegraph follows nixpkgs and runs with telemetry disabled.
 
 Run `codegraph init` once at each repository root you want indexed. Existing
 indexes sync automatically. Avoid initializing aggregate directories like `~/code`,

@@ -8,20 +8,6 @@ let
   # The M2 keeps its existing Anthropic authentication flow. The company M5
   # explicitly removes this plugin in modules/darwin/home/company-opencode.nix.
   anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
-  opencodeV2Version = "2.0.24";
-  codegraphVersion = "1.6.2";
-  effectMcpVersion = "0.1.16";
-
-  # Published Effect MCP is a self-contained Node bundle (no npm install needed).
-  effectMcpBundle = pkgs.fetchzip {
-    url = "https://registry.npmjs.org/effect-mcp/-/effect-mcp-${effectMcpVersion}.tgz";
-    hash = "sha256-BNK90JKs7e/NQyv3/9jghUKMF7JV0ntCezDqBA3Iw5c=";
-  };
-  effectMcp = pkgs.writeShellApplication {
-    name = "effect-mcp";
-    text = ''exec ${pkgs.nodejs_22}/bin/node ${effectMcpBundle}/main.cjs "$@"'';
-  };
-
   # Projects opt in by command name; keep the Darwin app path and version-specific
   # flags here so every project uses the same configured browser.
   firefoxMcp = pkgs.writeShellApplication {
@@ -33,51 +19,30 @@ let
     '';
   };
 
-  # The main npm package is only a launcher; the runnable bundle ships per platform.
-  codegraphBundle = pkgs.fetchzip {
-    url = "https://registry.npmjs.org/@colbymchenry/codegraph-darwin-arm64/-/codegraph-darwin-arm64-${codegraphVersion}.tgz";
-    hash = "sha256-d88aph8IJbcjcQGuJRV0PlIGyQ/hkaOJ6k8RRkILrq8=";
-  };
-
-  # CodeGraph has no global codegraph.json. Extend its built-in directory skips
-  # for every project; node_modules is already excluded upstream.
-  codegraphPatchedBundle = pkgs.runCommand "codegraph-${codegraphVersion}-bundle" { } ''
-    cp -R ${codegraphBundle} "$out"
-    chmod -R u+w "$out"
-    substituteInPlace "$out/lib/dist/extraction/index.js" \
-      --replace-fail "'.yarn', '.pnpm-store'," "'.yarn', '.pnpm-store', '.devenv', 'devenv',"
-  '';
-
+  # Follow nixpkgs while retaining the privacy environment used by the MCP.
   codegraph = pkgs.writeShellApplication {
     name = "codegraph";
     runtimeEnv = {
       CODEGRAPH_TELEMETRY = "0";
       DO_NOT_TRACK = "1";
     };
-    text = ''exec ${codegraphPatchedBundle}/bin/codegraph "$@"'';
+    text = ''exec ${lib.getExe pkgs.codegraph} "$@"'';
   };
 
-  # V2 ships signed per-platform binaries on npm; the pinned nixpkgs has V1.
-  opencodeV2Bundle = pkgs.fetchzip {
-    url = "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-${opencodeV2Version}.tgz";
-    hash = "sha256-NiD8JtQjJkI1D/U40M2TbfjCw6aifz3JBov/xu7UsXU=";
-  };
-
-  # Like the nixpkgs V1 wrapper: ripgrep from nixpkgs instead of a downloaded
-  # copy, and no self-update. The background service inherits this environment.
-  opencodeV2 = pkgs.writeShellApplication {
+  # Use the nixpkgs package so OpenCode follows the flake's nixpkgs revision.
+  # The wrapper only makes project-opt-in MCP executables available to its
+  # background service.
+  opencode = pkgs.writeShellApplication {
     name = "opencode";
-    # Available to project MCP definitions without enabling those servers globally.
     runtimeInputs = [
       pkgs.ripgrep
       pkgs.mcp-nixos
-      effectMcp
       firefoxMcp
     ];
     runtimeEnv = {
       OPENCODE_DISABLE_AUTOUPDATE = "1";
     };
-    text = ''exec ${opencodeV2Bundle}/bin/opencode "$@"'';
+    text = ''exec ${lib.getExe pkgs.opencode} "$@"'';
   };
 
   opencodeConfigDirectory = "${config.xdg.configHome}/opencode";
@@ -98,7 +63,7 @@ in
 {
   programs.opencode = {
     enable = true;
-    package = opencodeV2;
+    package = opencode;
     settings = {
       plugins = [ anthropicAuthPluginV2 ];
       mcp.servers = {
@@ -152,7 +117,6 @@ in
   home.packages = [
     codegraph
     lspTools
-    effectMcp
     pkgs.mcp-nixos
     firefoxMcp
     pkgs.typescript-language-server

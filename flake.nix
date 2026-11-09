@@ -5,6 +5,13 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable-2511.url = "github:NixOS/nixpkgs/release-25.11";
 
+    # DwarfStar does not publish Git tags yet. The lock file pins a reviewed
+    # upstream revision; `nix flake update ds4` advances it deliberately.
+    ds4 = {
+      url = "github:antirez/ds4";
+      flake = false;
+    };
+
     darwin = {
       url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -108,19 +108,22 @@ let
         output = [ "text" ];
       };
       limit = {
-        context = 32768;
+        context = 40960;
         output = 8192;
       };
     };
     "qwen3:14b" = {
       name = "Qwen3 14B (default local)";
+      # Qwen3 can emit its entire tool-use decision as reasoning, leaving no
+      # tool call for OpenCode to execute. Disable reasoning for agent turns.
+      body.reasoning_effort = "none";
       capabilities = {
         tools = true;
         input = [ "text" ];
         output = [ "text" ];
       };
       limit = {
-        context = 32768;
+        context = 40960;
         output = 8192;
       };
     };
@@ -132,8 +135,8 @@ let
         output = [ "text" ];
       };
       limit = {
-        context = 32768;
-        output = 8192;
+        context = 65536;
+        output = 16384;
       };
     };
     "qwen3-coder:30b" = {
@@ -144,8 +147,8 @@ let
         output = [ "text" ];
       };
       limit = {
-        context = 32768;
-        output = 8192;
+        context = 65536;
+        output = 16384;
       };
     };
   };

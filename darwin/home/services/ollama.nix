@@ -18,7 +18,7 @@
       EnvironmentVariables = {
         OLLAMA_HOST = "127.0.0.1:11434";
         # Agent prompts need more than Ollama's small default context.
-        OLLAMA_CONTEXT_LENGTH = "32768";
+        OLLAMA_CONTEXT_LENGTH = "65536";
         # Keep the model loaded between OpenCode turns, but not indefinitely:
         # ds4 needs the same unified memory for its expert cache.
         OLLAMA_KEEP_ALIVE = "15m";

@@ -6,9 +6,9 @@
 }:
 {
   environment = {
-    # reference xcode from the system closure so it's gc-rooted (it has no bin/share to link via systemPackages)
-    # TODO: re-enable once Xcode 26.5 is re-added to the store (needs Apple ID for download)
-    # etc."xcode".source = pkgs.darwin.xcode_26_5_Apple_silicon;
+    # Keep Xcode in the system closure; it has no bin/share paths to link via
+    # systemPackages. Activation prompts for the Apple download when needed.
+    etc."xcode".source = pkgs.darwin.xcode_26_6_Apple_silicon;
     # symlink system packages to home manager zsh for completion access
     pathsToLink = [ "/share/zsh/" ];
     systemPackages = with pkgs; [

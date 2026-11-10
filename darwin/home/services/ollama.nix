@@ -17,10 +17,14 @@
       ];
       EnvironmentVariables = {
         OLLAMA_HOST = "127.0.0.1:11434";
-        # Agent prompts need more than Ollama's small default context.
-        OLLAMA_CONTEXT_LENGTH = "65536";
-        # Keep the model loaded between OpenCode turns, but not indefinitely:
-        # ds4 needs the same unified memory for its expert cache.
+        # Reserve 64K tokens for coding-agent prompt/tool history and up to
+        # 16K tokens for output. The smaller Qwen models retain their native
+        # 40K limit and are intended only for short tasks.
+        OLLAMA_CONTEXT_LENGTH = "81920";
+        # Halves KV-cache memory with no usually noticeable quality loss.
+        # Requires flash attention, which is explicitly enabled below.
+        OLLAMA_KV_CACHE_TYPE = "q8_0";
+        # Keep the model loaded between OpenCode turns, but not indefinitely.
         OLLAMA_KEEP_ALIVE = "15m";
         OLLAMA_FLASH_ATTENTION = "1";
       };

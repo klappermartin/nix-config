@@ -6,7 +6,6 @@
     # Include Codex and Claude so CodexBar can find their configurations.
     claude-code
     codex
-    codexbar
     colima
     dive
     docker
@@ -14,6 +13,7 @@
     docker-credential-helpers
     fx
     google-cloud-sdk
+    goose-cli
     nixd
     nixfmt
     nodejs_22

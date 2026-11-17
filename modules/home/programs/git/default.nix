@@ -118,8 +118,8 @@ in
 
       # resolve to the per-machine file built by the home.activation step below,
       # so `git log --show-signature` can verify own commits locally
-      "gpg.ssh" = {
-        allowedSignersFile = "~/.config/git/allowed_signers";
+      gpg = {
+        ssh.allowedSignersFile = "~/.config/git/allowed_signers";
       };
 
       user = {

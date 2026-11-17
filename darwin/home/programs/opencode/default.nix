@@ -5,8 +5,7 @@
   ...
 }:
 let
-  # The M2 keeps its existing Anthropic authentication flow. The company M5
-  # explicitly removes this plugin in modules/darwin/home/company-opencode.nix.
+  # Share Anthropic authentication across Macs; work-directory policy disables it.
   anthropicAuthPluginV2 = "@ex-machina/opencode-anthropic-auth@2.0.0-next.5";
   # Projects opt in by command name; keep the Darwin app path and version-specific
   # flags here so every project uses the same configured browser.

@@ -1,4 +1,13 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  inputs,
+  ...
+}:
+let
+  pkgsGoose = import inputs.nixpkgs-goose {
+    system = pkgs.stdenv.hostPlatform.system;
+  };
+in
 {
   home.packages = with pkgs; [
     ast-grep
@@ -13,7 +22,7 @@
     docker-credential-helpers
     fx
     google-cloud-sdk
-    goose-cli
+    pkgsGoose.goose-cli
     nixd
     nixfmt
     nodejs_22

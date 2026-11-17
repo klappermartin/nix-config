@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable-2511.url = "github:NixOS/nixpkgs/release-25.11";
+    # Keep Goose on the build fix merged after our main nixpkgs pin.
+    nixpkgs-goose.url = "github:NixOS/nixpkgs/2f16d1a4f7d0a86325669e8fe77b72c1ef2aac44";
 
     darwin = {
       url = "github:nix-darwin/nix-darwin/master";

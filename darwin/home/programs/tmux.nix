@@ -31,6 +31,8 @@
       set -g default-shell "$SHELL"
     '';
     clock24 = true;
+    # keep in sync with ghostty scrollback-limit-lines and kitty scrollback_lines
+    historyLimit = 50000;
     mouse = true;
     plugins = with pkgs; [
       {

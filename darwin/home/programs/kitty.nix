@@ -21,6 +21,8 @@
       hide_window_decorations = "titlebar-only";
       window_margin_width = 4;
       placement_strategy = "center";
+      # keep in sync with tmux historyLimit
+      scrollback_lines = 50000;
     };
     shellIntegration.enableZshIntegration = true;
   };

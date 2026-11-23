@@ -195,6 +195,7 @@
       # "Only in Stage Manager" prevents clicking the wallpaper from moving
       # windows around; desktop items must stay enabled for empty-space focus.
       WindowManager = {
+        GloballyEnabled = false;
         EnableStandardClickToShowDesktop = false;
         StandardHideDesktopIcons = false;
       };

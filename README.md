@@ -162,6 +162,7 @@ substitute for the non-activating evaluation/build commands above.
 
 ### Core Tools
 - Firefox Developer Edition (with extensions and configuration)
+- Firefox (regular release, with unmanaged profiles in `~/Library/Application Support/org.nixos.firefox`, separate from Developer Edition)
 - VSCodium (with extensions)
 - Kitty terminal
 - Tmux
